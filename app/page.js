@@ -1,8 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Smile, ChevronDown, User } from "lucide-react";
+import { Smile, ChevronDown, MessageSquare } from "lucide-react";
 import { characters, getRandomConversationStarter } from "../lib/characters";
+import { conversationMissions } from "../lib/missions";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
@@ -10,6 +19,10 @@ export default function ChatInterface() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [activeCharacter, setActiveCharacter] = useState(characters[0]);
+  const [currentMission, setCurrentMission] = useState(null);
+  const [feedback, setFeedback] = useState("");
+  const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -22,35 +35,110 @@ export default function ChatInterface() {
     scrollToBottom();
   }, [messages]);
 
-  // Initialize with a random conversation starter for the default character
-  useEffect(() => {
-    const initialMessage = {
-      id: 1,
-      text: getRandomConversationStarter(activeCharacter.id),
-      sender: "bot",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages([initialMessage]);
-  }, []);
+  // Initialize with a random mission and conversation starter
+  // useEffect(() => {
+  //   const randomMission =
+  //     conversationMissions[
+  //       Math.floor(Math.random() * conversationMissions.length)
+  //     ];
+  //   setCurrentMission(randomMission);
 
-  const handleCharacterSelect = (character) => {
-    setActiveCharacter(character);
-    setIsDropdownOpen(false);
+  // const missionIntro = {
+  //   id: 0,
+  //   text: `Today I'll be evaluating your ${randomMission.style.toLowerCase()} conversation skills. I'll be looking at how well you maintain a ${randomMission.tone.toLowerCase()} tone and ${randomMission.description.toLowerCase()} Let's practice!`,
+  //   sender: "bot",
+  //   timestamp: new Date().toLocaleTimeString([], {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   }),
+  // };
 
-    // Reset conversation with new character's random starter
-    const newMessage = {
-      id: Date.now(),
-      text: getRandomConversationStarter(character.id),
-      sender: "bot",
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-    setMessages([newMessage]);
+  //   const initialMessage = {
+  //     id: 1,
+  //     text: getRandomConversationStarter(activeCharacter.id),
+  //     sender: "bot",
+  //     timestamp: new Date().toLocaleTimeString([], {
+  //       hour: "2-digit",
+  //       minute: "2-digit",
+  //     }),
+  //   };
+  //   // !!add missonIntero and initialMessage to messages state if needed
+  //   setMessages([initialMessage]);
+  // }, []);
+
+  // const handleCharacterSelect = (character) => {
+  //   setActiveCharacter(character);
+  //   setIsDropdownOpen(false);
+
+  // Get a new random mission for the new character
+  // const randomMission =
+  //   conversationMissions[
+  //     Math.floor(Math.random() * conversationMissions.length)
+  //   ];
+  // setCurrentMission(randomMission);
+
+  // Reset conversation with new character's mission intro and random starter
+  // const missionIntro = {
+  //   id: Date.now(),
+  //   text: `Today I'll be evaluating your ${randomMission.style.toLowerCase()} conversation skills. I'll be looking at how well you maintain a ${randomMission.tone.toLowerCase()} tone and ${randomMission.description.toLowerCase()} Let's practice!`,
+  //   sender: "bot",
+  //   timestamp: new Date().toLocaleTimeString([], {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   }),
+  // };
+
+  // const newMessage = {
+  //   id: Date.now() + 1,
+  //   text: "",
+  //   sender: "bot",
+  //   timestamp: new Date().toLocaleTimeString([], {
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   }),
+  // };
+
+  //   setMessages([missionIntro, newMessage]);
+  // };
+
+  const getFeedback = async () => {
+    if (messages.length < 3) {
+      setFeedback(
+        "Please have a longer conversation before requesting feedback."
+      );
+      return;
+    }
+
+    setIsFeedbackLoading(true);
+    setIsSheetOpen(true);
+
+    try {
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: messages.filter((msg) => msg.id !== 0), // Exclude mission intro
+          character: activeCharacter,
+          mission: currentMission,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get feedback");
+      }
+
+      const data = await response.json();
+      setFeedback(data.feedback);
+    } catch (error) {
+      console.error("Error getting feedback:", error);
+      setFeedback(
+        "Sorry, I couldn't generate feedback right now. Please try again later."
+      );
+    } finally {
+      setIsFeedbackLoading(false);
+    }
   };
 
   const sendMessage = async () => {
@@ -80,7 +168,8 @@ export default function ChatInterface() {
         body: JSON.stringify({
           message: currentInput,
           character: activeCharacter,
-          conversationHistory: messages.slice(-10), // Send last 10 messages for context
+          mission: currentMission,
+          conversationHistory: messages.slice(-10),
         }),
       });
 
@@ -176,6 +265,13 @@ export default function ChatInterface() {
             {activeCharacter.name}
           </h2>
           <p className="text-sm text-gray-500">{activeCharacter.description}</p>
+          {currentMission && (
+            <div className="mt-2 px-3 py-1 bg-blue-50 rounded-full">
+              <p className="text-xs text-blue-700 font-medium">
+                Mission: {currentMission.style} ({currentMission.tone})
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,6 +288,8 @@ export default function ChatInterface() {
               className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
                 message.sender === "user"
                   ? "bg-emerald-500 text-white rounded-br-md"
+                  : message.id === 0
+                  ? "bg-blue-50 text-blue-800 rounded-bl-md border border-blue-200"
                   : "bg-white text-gray-800 rounded-bl-md border border-gray-200"
               }`}
             >
@@ -200,6 +298,8 @@ export default function ChatInterface() {
                 className={`text-xs mt-1 ${
                   message.sender === "user"
                     ? "text-emerald-100"
+                    : message.id === 0
+                    ? "text-blue-600"
                     : "text-gray-500"
                 }`}
               >
@@ -256,6 +356,50 @@ export default function ChatInterface() {
           </button>
         </div>
       </div>
+
+      {/* Feedback Button */}
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetTrigger asChild>
+          <button
+            onClick={getFeedback}
+            className="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg transition-colors duration-200 z-10"
+          >
+            <MessageSquare className="w-6 h-6" />
+          </button>
+        </SheetTrigger>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Conversation Feedback</SheetTitle>
+            <SheetDescription>
+              Here's how you performed in your{" "}
+              {currentMission?.style.toLowerCase()} conversation:
+            </SheetDescription>
+          </SheetHeader>
+          <div className="mt-6 overflow-auto  px-4">
+            {isFeedbackLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex space-x-2">
+                  <div className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"></div>
+                  <div
+                    className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.1s" }}
+                  ></div>
+                  <div
+                    className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0.2s" }}
+                  ></div>
+                </div>
+              </div>
+            ) : (
+              <div className="prose prose-sm">
+                <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                  {feedback}
+                </p>
+              </div>
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
