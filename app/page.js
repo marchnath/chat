@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Smile, ChevronDown, MessageSquare } from "lucide-react";
-import { characters, getRandomConversationStarter } from "../lib/characters";
-import { conversationMissions } from "../lib/missions";
+import { Smile } from "lucide-react";
+import { IoFootstepsSharp } from "react-icons/io5";
 import {
   Sheet,
   SheetContent,
@@ -17,9 +16,6 @@ export default function ChatInterface() {
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [activeCharacter, setActiveCharacter] = useState(characters[0]);
-  const [currentMission, setCurrentMission] = useState(null);
   const [feedback, setFeedback] = useState("");
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -34,72 +30,6 @@ export default function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  // Initialize with a random mission and conversation starter
-  // useEffect(() => {
-  //   const randomMission =
-  //     conversationMissions[
-  //       Math.floor(Math.random() * conversationMissions.length)
-  //     ];
-  //   setCurrentMission(randomMission);
-
-  // const missionIntro = {
-  //   id: 0,
-  //   text: `Today I'll be evaluating your ${randomMission.style.toLowerCase()} conversation skills. I'll be looking at how well you maintain a ${randomMission.tone.toLowerCase()} tone and ${randomMission.description.toLowerCase()} Let's practice!`,
-  //   sender: "bot",
-  //   timestamp: new Date().toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   }),
-  // };
-
-  //   const initialMessage = {
-  //     id: 1,
-  //     text: getRandomConversationStarter(activeCharacter.id),
-  //     sender: "bot",
-  //     timestamp: new Date().toLocaleTimeString([], {
-  //       hour: "2-digit",
-  //       minute: "2-digit",
-  //     }),
-  //   };
-  //   // !!add missonIntero and initialMessage to messages state if needed
-  //   setMessages([initialMessage]);
-  // }, []);
-
-  // const handleCharacterSelect = (character) => {
-  //   setActiveCharacter(character);
-  //   setIsDropdownOpen(false);
-
-  // Get a new random mission for the new character
-  // const randomMission =
-  //   conversationMissions[
-  //     Math.floor(Math.random() * conversationMissions.length)
-  //   ];
-  // setCurrentMission(randomMission);
-
-  // Reset conversation with new character's mission intro and random starter
-  // const missionIntro = {
-  //   id: Date.now(),
-  //   text: `Today I'll be evaluating your ${randomMission.style.toLowerCase()} conversation skills. I'll be looking at how well you maintain a ${randomMission.tone.toLowerCase()} tone and ${randomMission.description.toLowerCase()} Let's practice!`,
-  //   sender: "bot",
-  //   timestamp: new Date().toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   }),
-  // };
-
-  // const newMessage = {
-  //   id: Date.now() + 1,
-  //   text: "",
-  //   sender: "bot",
-  //   timestamp: new Date().toLocaleTimeString([], {
-  //     hour: "2-digit",
-  //     minute: "2-digit",
-  //   }),
-  // };
-
-  //   setMessages([missionIntro, newMessage]);
-  // };
 
   const getFeedback = async () => {
     if (messages.length < 3) {
@@ -119,9 +49,7 @@ export default function ChatInterface() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          messages: messages.filter((msg) => msg.id !== 0), // Exclude mission intro
-          character: activeCharacter,
-          mission: currentMission,
+          messages: messages,
         }),
       });
 
@@ -167,8 +95,6 @@ export default function ChatInterface() {
         },
         body: JSON.stringify({
           message: currentInput,
-          character: activeCharacter,
-          mission: currentMission,
           conversationHistory: messages.slice(-10),
         }),
       });
@@ -216,62 +142,13 @@ export default function ChatInterface() {
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto">
-      {/* Character Dropdown */}
-      <div className="fixed top-4 left-4 z-10">
-        <div className="">
-          <button
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            className="flex items-center space-x-2 bg-white rounded-full px-3 py-2 shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-200"
-          >
-            <Smile className={`w-6 h-6 ${activeCharacter.color}`} />
-            <ChevronDown className="w-4 h-4 text-gray-500" />
-          </button>
-
-          {isDropdownOpen && (
-            <div
-              className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 min-w-48 py-2"
-              onMouseLeave={() => setIsDropdownOpen(false)}
-            >
-              {characters.map((character) => (
-                <button
-                  key={character.id}
-                  onClick={() => handleCharacterSelect(character)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors duration-200 ${
-                    activeCharacter.id === character.id ? "bg-gray-50" : ""
-                  }`}
-                >
-                  <Smile className={`w-6 h-6 ${character.color}`} />
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">
-                      {character.name}
-                    </p>
-                    <p className="text-sm text-gray-500">{character.label}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Header with Active Character Avatar */}
       <div className="p-4 ">
         <div className="flex flex-col items-center">
           <div className="w-30 h-30 rounded-full flex items-center justify-center mb-3 shadow-lg">
-            <Smile className={`w-24 h-24 ${activeCharacter.color}`} />
+            <Smile className={`w-24 h-24 text-emerald-500`} />
           </div>
-          <h2 className="text-lg font-semibold text-gray-700">
-            {activeCharacter.name}
-          </h2>
-          <p className="text-sm text-gray-500">{activeCharacter.description}</p>
-          {currentMission && (
-            <div className="mt-2 px-3 py-1 bg-blue-50 rounded-full">
-              <p className="text-xs text-blue-700 font-medium">
-                Mission: {currentMission.style} ({currentMission.tone})
-              </p>
-            </div>
-          )}
+          <h2 className="text-lg font-semibold text-gray-700"></h2>
         </div>
       </div>
 
@@ -362,17 +239,16 @@ export default function ChatInterface() {
         <SheetTrigger asChild>
           <button
             onClick={getFeedback}
-            className="fixed bottom-6 right-6 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg transition-colors duration-200 z-10"
+            className="fixed bottom-6 right-6 bg-emerald-500 hover:bg-emerald-600 text-white p-4 rounded-full shadow-lg transition-colors duration-200 z-10"
           >
-            <MessageSquare className="w-6 h-6" />
+            <IoFootstepsSharp className="w-6 h-6" />
           </button>
         </SheetTrigger>
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Conversation Feedback</SheetTitle>
             <SheetDescription>
-              Here's how you performed in your{" "}
-              {currentMission?.style.toLowerCase()} conversation:
+              Here's how you performed in your conversation:
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6 overflow-auto  px-4">
