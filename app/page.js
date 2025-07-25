@@ -145,9 +145,9 @@ export default function ChatInterface() {
       {/* Header with Active Character Avatar */}
       <div className="p-4 ">
         <div className="flex flex-col items-center">
-          <div className="w-30 h-30 rounded-full flex items-center justify-center mb-3 shadow-lg">
+          {/* <div className="w-30 h-30 rounded-full flex items-center justify-center mb-3 shadow-lg">
             <Smile className={`w-24 h-24 text-emerald-500`} />
-          </div>
+          </div> */}
           <h2 className="text-lg font-semibold text-gray-700"></h2>
         </div>
       </div>

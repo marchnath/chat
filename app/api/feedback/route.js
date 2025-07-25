@@ -18,7 +18,7 @@ Goals:
 Instructions:
 - Start with a Clarity Score and Interest Score (1–10)
 - Mention 1–2 things they did well
-- Mention 1–2 areas to improve
+- Mention 1–3 areas to improve
 - Provide one example of how they could rephrase a sentence or express something better
 
 Here is the user's recent conversation input:
