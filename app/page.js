@@ -5,16 +5,30 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Menu, X, User, Sun, ChevronDown, Search, Plus } from "lucide-react";
 import { contacts } from "@/lib/contacts";
+import useProfileStore from "@/lib/store";
 
 export default function HomePage() {
   const router = useRouter();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [nativeLanguage, setNativeLanguage] = useState("English");
-  const [nativeProficiency, setNativeProficiency] = useState("Native");
-  const [learningLanguage, setLearningLanguage] = useState("Russian");
-  const [learningProficiency, setLearningProficiency] = useState("Beginner");
-  const [theme, setTheme] = useState("dark");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Use Zustand store for profile settings
+  const {
+    nativeLanguage,
+    nativeProficiency,
+    learningLanguage,
+    learningProficiency,
+    theme,
+    setNativeLanguage,
+    setNativeProficiency,
+    setLearningLanguage,
+    setLearningProficiency,
+    setTheme,
+    initializeFromLocalStorage,
+    _hasHydrated,
+  } = useProfileStore();
+
   // Filters and favorites removed per design update
 
   const languages = [
@@ -43,54 +57,29 @@ export default function HomePage() {
     setIsProfileOpen(!isProfileOpen);
   };
 
-  // Load saved preferences on mount
+  // Initialize from localStorage on mount (for migration)
   useEffect(() => {
+    initializeFromLocalStorage();
+
     try {
-      const raw = localStorage.getItem("profileSettings");
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved.nativeLanguage) setNativeLanguage(saved.nativeLanguage);
-        if (saved.nativeProficiency)
-          setNativeProficiency(saved.nativeProficiency);
-        if (saved.learningLanguage) setLearningLanguage(saved.learningLanguage);
-        if (saved.learningProficiency)
-          setLearningProficiency(saved.learningProficiency);
-        if (saved.theme) setTheme(saved.theme);
-      }
       const uiRaw = localStorage.getItem("homeUI");
       if (uiRaw) {
         const ui = JSON.parse(uiRaw);
         if (ui.searchQuery) setSearchQuery(ui.searchQuery);
+        if (ui.isSearchOpen) setIsSearchOpen(ui.isSearchOpen);
       }
     } catch {}
-  }, []);
-
-  // Persist preferences
-  useEffect(() => {
-    const settings = {
-      nativeLanguage,
-      nativeProficiency,
-      learningLanguage,
-      learningProficiency,
-      theme,
-    };
-    try {
-      localStorage.setItem("profileSettings", JSON.stringify(settings));
-    } catch {}
-  }, [
-    nativeLanguage,
-    nativeProficiency,
-    learningLanguage,
-    learningProficiency,
-    theme,
-  ]);
+  }, [initializeFromLocalStorage]);
 
   // Persist simple home UI prefs
   useEffect(() => {
     try {
-      localStorage.setItem("homeUI", JSON.stringify({ searchQuery }));
+      localStorage.setItem(
+        "homeUI",
+        JSON.stringify({ searchQuery, isSearchOpen })
+      );
     } catch {}
-  }, [searchQuery]);
+  }, [searchQuery, isSearchOpen]);
 
   const filteredContacts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -325,31 +314,58 @@ export default function HomePage() {
               Textipal
             </h1>
           </div>
-          {/* Search moved into header */}
+          {/* Search Icon */}
           <div className="flex items-center gap-2">
-            <div className="relative w-40 sm:w-56">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
+            {!isSearchOpen ? (
+              <button
+                onClick={() => setIsSearchOpen(true)}
                 className={
-                  "w-full pl-9 pr-8 py-2 rounded-xl text-sm outline-none ring-1 transition-colors " +
-                  (theme === "dark"
-                    ? "bg-white/5 ring-white/10 text-gray-100 placeholder:text-gray-400 focus:ring-purple-500/40"
-                    : "bg-white ring-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-purple-200")
+                  "p-2 rounded-lg transition-colors " +
+                  (theme === "dark" ? "hover:bg-white/10" : "hover:bg-gray-100")
                 }
-              />
-              {searchQuery && (
+                aria-label="Search"
+              >
+                <Search
+                  className={
+                    "w-5 h-5 " +
+                    (theme === "dark" ? "text-gray-300" : "text-gray-600")
+                  }
+                />
+              </button>
+            ) : (
+              <div className="relative flex items-center gap-2">
+                <div className="relative w-40 sm:w-56">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-60" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search..."
+                    className={
+                      "w-full pl-9 pr-3 py-2 rounded-xl text-sm outline-none ring-1 transition-colors " +
+                      (theme === "dark"
+                        ? "bg-white/5 ring-white/10 text-gray-100 placeholder:text-gray-400 focus:ring-purple-500/40"
+                        : "bg-white ring-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-purple-200")
+                    }
+                    autoFocus
+                  />
+                </div>
                 <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-gray-200/60"
-                  aria-label="Clear search"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setIsSearchOpen(false);
+                  }}
+                  className={
+                    "p-2 rounded-lg transition-colors " +
+                    (theme === "dark"
+                      ? "hover:bg-white/10"
+                      : "hover:bg-gray-100")
+                  }
+                  aria-label="Close search"
                 >
                   <X className="w-4 h-4" />
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </header>
         {/* Removed hero and filter tags; search is in header */}

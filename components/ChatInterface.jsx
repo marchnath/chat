@@ -1,24 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from "react";
-import {
-  Send,
-  MoreVertical,
-  Globe,
-  ArrowLeft,
-  Lightbulb,
-  Smile,
-} from "lucide-react";
+import { Send, MoreVertical, ArrowLeft, Lightbulb, Smile } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import {
   translateLocally,
   getOfflineResponse,
@@ -28,6 +13,10 @@ import {
   phraseTranslations,
 } from "@/lib/conversationData";
 import { getContactByName, getPersonalityStarters } from "@/lib/contacts";
+import useProfileStore, {
+  getSelectedChatLanguage,
+  getNativeLanguageForTranslation,
+} from "@/lib/store";
 
 export default function ChatInterface() {
   const router = useRouter();
@@ -40,13 +29,29 @@ export default function ChatInterface() {
   const contact = getContactByName(contactName);
   const personality = contact?.personality || "friend";
 
+  // Use Zustand store for language preferences
+  const { _hasHydrated, learningLanguage } = useProfileStore();
+
+  // Wait for hydration before getting language to avoid hydration mismatch
+  const [selectedLanguage, setSelectedLanguage] = useState("english");
+  const [initialHint, setInitialHint] = useState("");
+
+  // Update language when store is hydrated or when learning language changes
+  useEffect(() => {
+    if (_hasHydrated) {
+      const language = getSelectedChatLanguage();
+      setSelectedLanguage(language);
+      // Generate initial hint with correct language after hydration
+      const hint = getPersonalityStarters(personality, language);
+      setInitialHint(hint);
+    }
+  }, [_hasHydrated, learningLanguage, personality]);
+
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
   const [currentHint, setCurrentHint] = useState("");
-  const [selectedLanguage, setSelectedLanguage] = useState("english");
   const [expandedMessages, setExpandedMessages] = useState(new Set());
   const [expandedHint, setExpandedHint] = useState(false);
   const [messageTranslations, setMessageTranslations] = useState({});
@@ -55,11 +60,6 @@ export default function ChatInterface() {
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
-
-  const initialHint = useMemo(
-    () => getPersonalityStarters(personality, selectedLanguage),
-    [selectedLanguage, personality]
-  );
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,10 +71,41 @@ export default function ChatInterface() {
 
   // Set initial hint and keep it visible
   useEffect(() => {
-    setCurrentHint(initialHint);
+    if (initialHint) {
+      setCurrentHint(initialHint);
+      // Clear hint translation when language/hint changes
+      setHintTranslation("");
+      setExpandedHint(false);
+
+      // Pre-load translation for initial hint
+      const loadInitialHintTranslation = async () => {
+        if (initialHint) {
+          const nativeLanguage = getNativeLanguageForTranslation();
+
+          // First try local translation for conversation starters
+          const localTranslation = translateLocally(
+            initialHint,
+            nativeLanguage
+          );
+          if (
+            !localTranslation.includes("translation unavailable") &&
+            !localTranslation.includes("перевод недоступен")
+          ) {
+            setHintTranslation(localTranslation);
+            return;
+          }
+
+          // If local translation isn't good enough, use API
+          const translation = await translateText(initialHint, nativeLanguage);
+          setHintTranslation(translation);
+        }
+      };
+
+      loadInitialHintTranslation();
+    }
   }, [initialHint]);
 
-  // Reset expansion states when language changes
+  // Reset expansion states and translations when language changes
   useEffect(() => {
     setExpandedMessages(new Set());
     setExpandedHint(false);
@@ -135,11 +166,10 @@ export default function ChatInterface() {
       newExpandedMessages.delete(messageId);
     } else {
       newExpandedMessages.add(messageId);
-      // Store translation if not already stored
+      // Only fetch translation if not already stored (for older messages or fallback)
       if (!messageTranslations[messageId]) {
-        const targetLang =
-          selectedLanguage === "english" ? "russian" : "english";
-        const translation = await translateText(messageText, targetLang);
+        const nativeLanguage = getNativeLanguageForTranslation();
+        const translation = await translateText(messageText, nativeLanguage);
         setMessageTranslations((prev) => ({
           ...prev,
           [messageId]: translation,
@@ -152,8 +182,9 @@ export default function ChatInterface() {
 
   const toggleHintExpansion = async () => {
     if (!expandedHint && currentHint && !hintTranslation) {
-      const targetLang = selectedLanguage === "english" ? "russian" : "english";
-      const translation = await translateText(currentHint, targetLang);
+      // Only fetch translation if not already provided by the API
+      const nativeLanguage = getNativeLanguageForTranslation();
+      const translation = await translateText(currentHint, nativeLanguage);
       setHintTranslation(translation);
     }
     setExpandedHint(!expandedHint);
@@ -179,6 +210,8 @@ export default function ChatInterface() {
 
         setMessages((prev) => [...prev, llmMessage]);
         setCurrentHint(fallbackResponse.hint);
+        // Clear hint translation for offline responses since they don't have translations
+        setHintTranslation("");
         setIsLoadingLLM(false);
         return;
       }
@@ -216,6 +249,8 @@ export default function ChatInterface() {
 
         setMessages((prev) => [...prev, llmMessage]);
         setCurrentHint(fallbackResponse.hint);
+        // Clear hint translation for offline responses since they don't have translations
+        setHintTranslation("");
         setIsLoadingLLM(false);
         return;
       }
@@ -231,12 +266,30 @@ export default function ChatInterface() {
       };
 
       setMessages((prev) => [...prev, llmMessage]);
-      setCurrentHint(
+
+      // Store the translation if provided
+      if (data.messageTranslation) {
+        setMessageTranslations((prev) => ({
+          ...prev,
+          [llmMessage.id]: data.messageTranslation,
+        }));
+      }
+
+      const newHint =
         data.hint ||
-          (selectedLanguage === "russian"
-            ? "Продолжайте разговор естественно."
-            : "Continue the conversation naturally.")
-      );
+        (selectedLanguage === "russian"
+          ? "Продолжайте разговор естественно."
+          : "Continue the conversation naturally.");
+
+      setCurrentHint(newHint);
+
+      // Store hint translation if provided
+      if (data.hintTranslation) {
+        setHintTranslation(data.hintTranslation);
+      } else {
+        // Clear previous hint translation if no new one
+        setHintTranslation("");
+      }
     } catch (error) {
       console.error("Error calling LLM:", error);
 
@@ -265,6 +318,8 @@ export default function ChatInterface() {
 
         setMessages((prev) => [...prev, llmMessage]);
         setCurrentHint(fallbackResponse.hint);
+        // Clear hint translation for offline fallback responses
+        setHintTranslation("");
         return; // Don't show error message, just use fallback
       }
 
@@ -398,69 +453,10 @@ export default function ChatInterface() {
             </div>
           </div>
 
-          {/* Language Menu */}
-          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors">
-                <MoreVertical className="w-5 h-5 text-slate-300" />
-              </button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5" />
-                  {uiText.languageSettings[selectedLanguage]}
-                </SheetTitle>
-                <SheetDescription>
-                  {uiText.chooseLanguage[selectedLanguage]}
-                </SheetDescription>
-              </SheetHeader>
-              <div className="mt-6 space-y-3">
-                <button
-                  onClick={() => {
-                    setSelectedLanguage("english");
-                    setIsSheetOpen(false);
-                  }}
-                  className={`w-full p-4 rounded-lg border text-left transition-colors ${
-                    selectedLanguage === "english"
-                      ? "border-purple-500 bg-purple-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🇺🇸</span>
-                    <div>
-                      <div className="font-medium">English</div>
-                      <div className="text-sm text-gray-500">
-                        {uiText.practiceEnglish[selectedLanguage]}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => {
-                    setSelectedLanguage("russian");
-                    setIsSheetOpen(false);
-                  }}
-                  className={`w-full p-4 rounded-lg border text-left transition-colors ${
-                    selectedLanguage === "russian"
-                      ? "border-purple-500 bg-purple-50"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">🇷🇺</span>
-                    <div>
-                      <div className="font-medium">Русский</div>
-                      <div className="text-sm text-gray-500">
-                        {uiText.practiceRussian[selectedLanguage]}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </SheetContent>
-          </Sheet>
+          {/* Decorative Menu Button */}
+          <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors">
+            <MoreVertical className="w-5 h-5 text-slate-300" />
+          </button>
         </div>
       </div>
 
