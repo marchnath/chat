@@ -4,14 +4,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { Send, MoreVertical, ArrowLeft, Lightbulb, Smile } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
-import {
-  translateLocally,
-  getOfflineResponse,
-  getRandomFallbackResponse,
-  getInitialHint,
-  uiText,
-  phraseTranslations,
-} from "@/lib/conversationData";
+import { getInitialHint } from "@/lib/conversationData";
 import { getContactByName, getPersonalityStarters } from "@/lib/contacts";
 import useProfileStore, {
   getSelectedChatLanguage,
@@ -30,7 +23,8 @@ export default function ChatInterface() {
   const personality = contact?.personality || "friend";
 
   // Use Zustand store for language preferences
-  const { _hasHydrated, learningLanguage } = useProfileStore();
+  const { _hasHydrated, learningLanguage, learningProficiency } =
+    useProfileStore();
 
   // Wait for hydration before getting language to avoid hydration mismatch
   const [selectedLanguage, setSelectedLanguage] = useState("english");
@@ -45,7 +39,7 @@ export default function ChatInterface() {
       const hint = getPersonalityStarters(personality, language);
       setInitialHint(hint);
     }
-  }, [_hasHydrated, learningLanguage, personality]);
+  }, [_hasHydrated, learningLanguage, learningProficiency, personality]);
 
   const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
@@ -56,7 +50,6 @@ export default function ChatInterface() {
   const [expandedHint, setExpandedHint] = useState(false);
   const [messageTranslations, setMessageTranslations] = useState({});
   const [hintTranslation, setHintTranslation] = useState("");
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -81,21 +74,6 @@ export default function ChatInterface() {
       const loadInitialHintTranslation = async () => {
         if (initialHint) {
           const nativeLanguage = getNativeLanguageForTranslation();
-
-          // First try local translation for conversation starters
-          const localTranslation = translateLocally(
-            initialHint,
-            nativeLanguage
-          );
-          if (
-            !localTranslation.includes("translation unavailable") &&
-            !localTranslation.includes("перевод недоступен")
-          ) {
-            setHintTranslation(localTranslation);
-            return;
-          }
-
-          // If local translation isn't good enough, use API
           const translation = await translateText(initialHint, nativeLanguage);
           setHintTranslation(translation);
         }
@@ -115,29 +93,6 @@ export default function ChatInterface() {
 
   const translateText = async (text, targetLanguage) => {
     try {
-      // First try local translation
-      const localTranslation = translateLocally(text, targetLanguage);
-
-      // Check if local translation actually worked (doesn't contain unavailable indicators)
-      if (
-        !localTranslation.includes("(translation unavailable)") &&
-        !localTranslation.includes("(перевод недоступен)") &&
-        localTranslation !== text && // Not just the original text
-        localTranslation.toLowerCase() !== "привет" && // Not generic fallback
-        localTranslation.toLowerCase() !== "нет" // Not generic fallback
-      ) {
-        return localTranslation;
-      }
-
-      // If in offline mode, don't try API
-      if (isOfflineMode) {
-        // Remove the unavailable indicator and just return the original text
-        return localTranslation
-          .replace(" (translation unavailable)", "")
-          .replace(" (перевод недоступен)", "");
-      }
-
-      // Use API for translation
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -154,7 +109,6 @@ export default function ChatInterface() {
       return data.translation || text; // Return original text if no translation
     } catch (error) {
       console.error("Error translating text:", error);
-      // Return original text without unavailable indicator
       return text;
     }
   };
@@ -193,29 +147,6 @@ export default function ChatInterface() {
   const sendToLLM = async (userMessage) => {
     setIsLoadingLLM(true);
     try {
-      // If already in offline mode, use fallback directly
-      if (isOfflineMode) {
-        const fallbackResponse = getOfflineResponse(
-          userMessage,
-          selectedLanguage,
-          personality
-        );
-
-        const llmMessage = {
-          id: Date.now(),
-          text: fallbackResponse.message,
-          sender: "personA",
-          timestamp: new Date().toLocaleTimeString(),
-        };
-
-        setMessages((prev) => [...prev, llmMessage]);
-        setCurrentHint(fallbackResponse.hint);
-        // Clear hint translation for offline responses since they don't have translations
-        setHintTranslation("");
-        setIsLoadingLLM(false);
-        return;
-      }
-
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -226,34 +157,11 @@ export default function ChatInterface() {
           ),
           isLLMMode: true,
           language: selectedLanguage,
+          proficiencyLevel: learningProficiency,
           personality: personality,
           contactName: contactName,
         }),
       });
-
-      // Check for rate limiting status code
-      if (response.status === 429) {
-        setIsOfflineMode(true);
-        const fallbackResponse = getOfflineResponse(
-          userMessage,
-          selectedLanguage,
-          personality
-        );
-
-        const llmMessage = {
-          id: Date.now(),
-          text: fallbackResponse.message,
-          sender: "personA",
-          timestamp: new Date().toLocaleTimeString(),
-        };
-
-        setMessages((prev) => [...prev, llmMessage]);
-        setCurrentHint(fallbackResponse.hint);
-        // Clear hint translation for offline responses since they don't have translations
-        setHintTranslation("");
-        setIsLoadingLLM(false);
-        return;
-      }
 
       const data = await response.json();
       if (data.error) throw new Error(data.error);
@@ -292,36 +200,6 @@ export default function ChatInterface() {
       }
     } catch (error) {
       console.error("Error calling LLM:", error);
-
-      // Check if it's a quota error or rate limit error
-      const isQuotaError =
-        error.message.includes("quota") ||
-        error.message.includes("rate limit") ||
-        error.message.includes("429") ||
-        error.message.includes("Too Many Requests");
-
-      if (isQuotaError) {
-        // Switch to offline mode and use fallback response
-        setIsOfflineMode(true);
-        const fallbackResponse = getOfflineResponse(
-          userMessage,
-          selectedLanguage,
-          personality
-        );
-
-        const llmMessage = {
-          id: Date.now(),
-          text: fallbackResponse.message,
-          sender: "personA",
-          timestamp: new Date().toLocaleTimeString(),
-        };
-
-        setMessages((prev) => [...prev, llmMessage]);
-        setCurrentHint(fallbackResponse.hint);
-        // Clear hint translation for offline fallback responses
-        setHintTranslation("");
-        return; // Don't show error message, just use fallback
-      }
 
       const errorMessage = {
         id: Date.now(),
@@ -432,24 +310,8 @@ export default function ChatInterface() {
             <div>
               <h1 className="font-semibold text-white leading-5">
                 {contactName}
-                {isOfflineMode && (
-                  <span className="ml-2 text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
-                    {uiText.offline[selectedLanguage]}
-                  </span>
-                )}
               </h1>
-              <p className="text-xs text-slate-400">
-                {uiText.conversationPractice[selectedLanguage]}
-                {isOfflineMode && (
-                  <span className="ml-1 text-orange-400">
-                    (
-                    {selectedLanguage === "russian"
-                      ? "Автономный режим"
-                      : "Local mode"}
-                    )
-                  </span>
-                )}
-              </p>
+              <p className="text-xs text-slate-400">Conversation practice</p>
             </div>
           </div>
 
@@ -466,7 +328,7 @@ export default function ChatInterface() {
           <div className="text-center py-8">
             <div className="inline-flex items-center gap-2 text-slate-400">
               <TypingIndicator />
-              {uiText.startingConversation[selectedLanguage]}
+              Starting conversation...
             </div>
           </div>
         )}
@@ -557,7 +419,7 @@ export default function ChatInterface() {
               value={inputText}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder={uiText.typeResponse[selectedLanguage]}
+              placeholder="Type your response..."
               className="w-full px-4 py-3 pr-12 bg-transparent text-slate-100 placeholder-slate-400 rounded-3xl resize-none max-h-36 focus:outline-none"
               rows="1"
               disabled={isLoadingLLM}
