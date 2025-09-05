@@ -1,0 +1,136 @@
+import { useState, useCallback } from "react";
+import ChatService from "@/lib/services/chatService";
+import { MESSAGE_SENDERS } from "@/lib/constants";
+
+export function useChat() {
+  const [messages, setMessages] = useState([]);
+  const [isLoadingLLM, setIsLoadingLLM] = useState(false);
+  const [currentHint, setCurrentHint] = useState("");
+  const [messageTranslations, setMessageTranslations] = useState({});
+  const [hintTranslation, setHintTranslation] = useState("");
+
+  const sendMessage = useCallback(
+    async (
+      userMessage,
+      { language, nativeLanguage, proficiencyLevel, personality, contactName }
+    ) => {
+      // Add user message
+      const userMsg = {
+        id: Date.now(),
+        text: userMessage,
+        sender: MESSAGE_SENDERS.PERSON_B,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setMessages((prev) => [...prev, userMsg]);
+
+      setIsLoadingLLM(true);
+      try {
+        const response = await ChatService.sendMessage({
+          message: userMessage,
+          conversationHistory: messages.filter(
+            (msg) => msg.sender !== MESSAGE_SENDERS.SYSTEM
+          ),
+          language,
+          nativeLanguage,
+          proficiencyLevel,
+          personality,
+          contactName,
+        });
+
+        // Add AI message
+        const aiMsg = {
+          id: Date.now() + 1,
+          text: response.message,
+          sender: MESSAGE_SENDERS.PERSON_A,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        setMessages((prev) => [...prev, aiMsg]);
+
+        // Store translation if provided
+        if (response.messageTranslation) {
+          setMessageTranslations((prev) => ({
+            ...prev,
+            [aiMsg.id]: response.messageTranslation,
+          }));
+        }
+
+        // Update hint and its translation
+        const newHint = response.hint || "Continue the conversation naturally.";
+        console.log("Setting new hint:", newHint); // Debug log
+        setCurrentHint(newHint);
+
+        // Store hint translation if provided, otherwise clear it
+        if (response.hintTranslation) {
+          console.log("Setting hint translation:", response.hintTranslation); // Debug log
+          setHintTranslation(response.hintTranslation);
+        } else {
+          setHintTranslation("");
+        }
+
+        return response;
+      } catch (error) {
+        console.error("Error sending message:", error);
+
+        const errorMsg = {
+          id: Date.now() + 1,
+          text: "Sorry, I'm having trouble responding right now. Please try again.",
+          sender: MESSAGE_SENDERS.PERSON_A,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+        setCurrentHint("Try sending your message again.");
+        throw error;
+      } finally {
+        setIsLoadingLLM(false);
+      }
+    },
+    [messages]
+  );
+
+  const translateMessage = useCallback(
+    async (messageId, messageText, targetLanguage) => {
+      if (messageTranslations[messageId]) {
+        return messageTranslations[messageId];
+      }
+
+      try {
+        const translation = await ChatService.translateText(
+          messageText,
+          targetLanguage
+        );
+        setMessageTranslations((prev) => ({
+          ...prev,
+          [messageId]: translation,
+        }));
+        return translation;
+      } catch (error) {
+        console.error("Error translating message:", error);
+        return messageText;
+      }
+    },
+    [messageTranslations]
+  );
+
+  const setInitialHint = useCallback((hint, translation = "") => {
+    setCurrentHint(hint);
+    setHintTranslation(translation);
+  }, []);
+
+  const clearTranslations = useCallback(() => {
+    setMessageTranslations({});
+    setHintTranslation("");
+  }, []);
+
+  return {
+    messages,
+    isLoadingLLM,
+    currentHint,
+    messageTranslations,
+    hintTranslation,
+    sendMessage,
+    translateMessage,
+    setInitialHint,
+    setHintTranslation,
+    clearTranslations,
+  };
+}
