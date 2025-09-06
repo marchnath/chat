@@ -15,6 +15,7 @@ import MessageBubble from "./MessageBubble";
 import TypingIndicator from "./TypingIndicator";
 import HintBubble from "./HintBubble";
 import ChatInput from "./ChatInput";
+import WordTranslationsMenu from "./WordTranslationsMenu";
 
 export default function ChatInterface() {
   const searchParams = useSearchParams();
@@ -29,8 +30,13 @@ export default function ChatInterface() {
   const personality = contact?.personality || "friend";
 
   // Store state
-  const { _hasHydrated, learningLanguage, learningProficiency } =
-    useProfileStore();
+  const {
+    _hasHydrated,
+    learningLanguage,
+    learningProficiency,
+    wordTranslationMenu,
+    hideWordTranslationMenu,
+  } = useProfileStore();
 
   // Local state for language to avoid hydration issues
   const [selectedLanguage, setSelectedLanguage] = useState("english");
@@ -128,7 +134,13 @@ export default function ChatInterface() {
     clearExpanded();
     setIsHintExpanded(false);
     clearTranslations();
-  }, [selectedLanguage, clearExpanded, clearTranslations]);
+    hideWordTranslationMenu(); // Also hide word translation menu
+  }, [
+    selectedLanguage,
+    clearExpanded,
+    clearTranslations,
+    hideWordTranslationMenu,
+  ]);
 
   const handleSendMessage = async (messageText) => {
     try {
@@ -255,6 +267,16 @@ export default function ChatInterface() {
         onSendMessage={handleSendMessage}
         isLoading={isLoadingLLM}
         placeholder="Type your response..."
+      />
+
+      {/* Word Translations Menu */}
+      <WordTranslationsMenu
+        text={wordTranslationMenu.text}
+        sourceLanguage={wordTranslationMenu.sourceLanguage}
+        targetLanguage={wordTranslationMenu.targetLanguage}
+        isVisible={wordTranslationMenu.isVisible}
+        onClose={hideWordTranslationMenu}
+        position="right"
       />
     </div>
   );
