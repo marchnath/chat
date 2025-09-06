@@ -81,12 +81,12 @@ export default function WordTranslationsMenu({
     >
       {/* Content - No header, direct content */}
       <div className="max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-600 scrollbar-track-slate-800">
-        {isLoading && (
+        {/* {isLoading && (
           <div className="flex items-center justify-center p-4">
             <Loader2 className="w-4 h-4 animate-spin text-blue-400 mr-2" />
             <span className="text-slate-400 text-xs">Loading...</span>
           </div>
-        )}
+        )} */}
 
         {error && (
           <div className="p-3 text-center">
