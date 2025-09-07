@@ -54,6 +54,7 @@ export default function RootLayout({ children }) {
         <link rel="icon" type="image/png" href="/icon-192x192.png" />
       </head>
       <body
+        suppressHydrationWarning={true}
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-900`}
       >
         <PWAInstaller />

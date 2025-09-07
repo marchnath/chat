@@ -1,6 +1,6 @@
 "use client";
 
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Languages } from "lucide-react";
 import useProfileStore, {
   getNativeLanguageForTranslation,
   getSelectedChatLanguage,
@@ -20,32 +20,24 @@ export default function HintBubble({
   if (!hint) return null;
 
   const handleClick = () => {
-    const { wordTranslationMenu } = useProfileStore.getState();
-
-    // If the hint translation menu is already open, close it
-    if (
-      wordTranslationMenu.isVisible &&
-      wordTranslationMenu.menuType === "hint"
-    ) {
-      useProfileStore.getState().hideWordTranslationMenu();
-    } else {
-      // Show word translation menu
-      const sourceLanguage = getSelectedChatLanguage();
-      const targetLanguage = getNativeLanguageForTranslation();
-
-      // Only show word translation menu if languages are different
-      if (sourceLanguage !== targetLanguage) {
-        showWordTranslationMenu(
-          hint,
-          sourceLanguage,
-          targetLanguage,
-          "hint",
-          "hint"
-        );
-      }
-    }
-
     onToggle();
+  };
+
+  const handleWordTranslationClick = (e) => {
+    e.stopPropagation();
+    const sourceLanguage = getSelectedChatLanguage();
+    const targetLanguage = getNativeLanguageForTranslation();
+
+    // Only show word translation menu if languages are different
+    if (sourceLanguage !== targetLanguage) {
+      showWordTranslationMenu(
+        hint,
+        sourceLanguage,
+        targetLanguage,
+        "hint",
+        "hint"
+      );
+    }
   };
 
   const handleTTSClick = (e) => {
@@ -71,9 +63,32 @@ export default function HintBubble({
             </>
           )}
 
-          {/* Actions (TTS) */}
+          {/* Action buttons container */}
           {isSupported && (
-            <div className="absolute bottom-1.5 right-1.5 opacity-100 scale-100 md:opacity-0 md:scale-90 md:group-hover:opacity-100 md:group-hover:scale-100 md:focus-within:opacity-100 md:focus-within:scale-100 transition-all duration-200">
+            <div className={`absolute flex flex-col gap-1 transition-all duration-200 ${
+              isExpanded && translation 
+                ? "bottom-1.5 right-1.5" // Normal position when translation is expanded
+                : "bottom-1.5 right-1.5"
+            } opacity-100 scale-100 md:opacity-0 md:scale-90 md:group-hover:opacity-100 md:group-hover:scale-100 md:focus-within:opacity-100 md:focus-within:scale-100`}>
+              
+              {/* Translate Words Icon Button - only show when translation is expanded */}
+              {isExpanded && translation && (
+                <button
+                  type="button"
+                  onClick={handleWordTranslationClick}
+                  aria-label="Translate individual words"
+                  className="relative inline-flex items-center justify-center w-7 h-7 rounded-full backdrop-blur-sm transition-all duration-200 bg-blue-800/40 text-blue-100 border border-blue-400/30 hover:bg-blue-700/60 focus-visible:ring-2 focus-visible:ring-blue-300/40"
+                >
+                  <Languages className="w-3.5 h-3.5" />
+                  <span className="sr-only">Translate individual words</span>
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent opacity-0 hover:opacity-100 transition-opacity"
+                  />
+                </button>
+              )}
+
+              {/* TTS Button */}
               <TTSButton
                 isSpeaking={isSpeaking}
                 isLoading={isLoading}
