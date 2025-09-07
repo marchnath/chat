@@ -87,9 +87,9 @@ export default function HintBubble({
         </div>
 
         {/* Lightbulb icon */}
-        <div className="absolute -top-2 -left-2 bg-yellow-400/95 backdrop-blur-sm rounded-full p-1 shadow-lg border border-yellow-300/50">
+        {/* <div className="absolute -top-2 -left-2 bg-yellow-400/95 backdrop-blur-sm rounded-full p-1 shadow-lg border border-yellow-300/50">
           <Lightbulb className="w-3.5 h-3.5 text-yellow-900" />
-        </div>
+        </div> */}
       </div>
     </div>
   );
