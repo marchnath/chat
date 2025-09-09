@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ArrowLeft, MoreVertical, Flame } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import useProfileStore from "@/lib/store";
 
 export default function ChatHeader({
   contactName,
@@ -11,6 +12,7 @@ export default function ChatHeader({
   personality,
 }) {
   const router = useRouter();
+  const { streakDays } = useProfileStore();
 
   return (
     <div className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-2">
@@ -30,7 +32,7 @@ export default function ChatHeader({
                 alt={contactName}
                 width={44}
                 height={44}
-                className="w-11 h-11 rounded-2xl object-cover"
+                className="w-11 h-11 rounded-full object-cover"
               />
               <span
                 aria-hidden
@@ -39,7 +41,7 @@ export default function ChatHeader({
             </div>
           ) : (
             <div
-              className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center text-white text-sm font-extrabold`}
+              className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center text-white text-sm font-extrabold`}
             >
               {contactAvatar?.length <= 3 ? contactAvatar : contactAvatar[0]}
             </div>
@@ -53,9 +55,15 @@ export default function ChatHeader({
             </p>
           </div>
         </div>
-        <button className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition">
-          <MoreVertical className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1 text-sky-400 font-bold text-xs select-none">
+            <Flame className="w-4 h-4 text-sky-500" />
+            <span>{streakDays}</span>
+          </div>
+          <button className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition">
+            <MoreVertical className="w-5 h-5" />
+          </button>
+        </div>
       </div>
     </div>
   );

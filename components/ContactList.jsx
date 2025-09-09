@@ -29,6 +29,7 @@ export default function ContactList({ contacts, theme }) {
     stranger: "from-teal-500 to-emerald-500",
     colleague: "from-amber-500 to-orange-500",
     client: "from-sky-500 to-cyan-500",
+    neutral: "from-slate-500 to-slate-600",
   };
 
   const rotateClasses = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", ""];

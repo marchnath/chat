@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Plus } from "lucide-react";
+import { Flame } from "lucide-react";
 import { contacts } from "@/lib/contacts";
 import useProfileStore from "@/lib/store";
-import ProfileSidebar from "@/components/ProfileSidebar";
 import ContactList from "@/components/ContactList";
 
 export default function HomePage() {
   const router = useRouter();
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   // Use Zustand store for profile settings
   const {
@@ -70,58 +68,44 @@ export default function HomePage() {
         }}
       />
 
-      <ProfileSidebar
-        isOpen={isProfileOpen}
-        onClose={() => setIsProfileOpen(false)}
+      {/* Legacy sidebar kept for potential reuse; could be removed later */}
+      {/* <ProfileSidebar
+        isOpen={false}
+        onClose={() => {}}
         theme={theme}
         profile={currentProfile}
         onProfileChange={handleProfileChange}
-      />
+      /> */}
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 pb-36">
-        <header className="mb-4 flex items-center justify-between">
-          <div className="flex items-center space-x-4">
+        <header className="mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsProfileOpen(true)}
-              aria-label="Menu"
-              className={
-                "p-2 rounded-lg transition-colors " +
-                (theme === "dark" ? "hover:bg-white/10" : "hover:bg-gray-100")
-              }
-            >
-              <Menu
-                className={
-                  "w-5 h-5 " +
-                  (theme === "dark" ? "text-gray-300" : "text-gray-600")
-                }
-              />
-            </button>
+              onClick={() => router.push("/profile")}
+              aria-label="Open profile"
+              className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 ring-2 ring-blue-400/40 shadow-md shadow-blue-600/30 hover:shadow-lg hover:-translate-y-0.5 transition"
+            />
             <h1
               className={
                 "text-3xl sm:text-4xl font-extrabold tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500 drop-shadow " +
                 (theme === "dark"
-                  ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-rose-300"
-                  : "text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-rose-600")
+                  ? "text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-blue-300 to-indigo-300"
+                  : "text-transparent bg-clip-text bg-gradient-to-r from-sky-700 via-blue-600 to-indigo-600")
               }
             >
               Textipal
             </h1>
+          </div>
+          <div className="flex items-center gap-1 text-sky-500 font-bold text-sm select-none">
+            <Flame className="w-5 h-5" />
+            <span>3</span>
           </div>
         </header>
 
         <ContactList contacts={contacts} theme={theme} />
       </div>
 
-      {/* Floating Action Button */}
-      <button
-        onClick={() =>
-          router.push("/chat?name=Pal&avatar=/avatars/avatar0.png")
-        }
-        aria-label="New chat"
-        className="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 p-4 rounded-2xl text-white bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg hover:from-purple-700 hover:to-pink-600 focus:outline-none"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {/* Quick chat now available as a neutral contact (id:6) instead of FAB */}
     </div>
   );
 }
