@@ -16,6 +16,7 @@ import TypingIndicator from "./TypingIndicator";
 import HintBubble from "./HintBubble";
 import ChatInput from "./ChatInput";
 import WordTranslationsMenu from "./WordTranslationsMenu";
+import { getPersonalityGradient } from "@/lib/gradients";
 
 export default function ChatInterface() {
   const searchParams = useSearchParams();
@@ -28,6 +29,7 @@ export default function ChatInterface() {
   // Get contact personality information
   const contact = getContactByName(contactName);
   const personality = contact?.personality || "friend";
+  const gradient = getPersonalityGradient(personality);
 
   // Store state
   const {
@@ -207,45 +209,82 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="flex flex-col h-screen max-w-4xl mx-auto relative overflow-hidden">
-      {/* Background Pattern */}
+    <div className="flex flex-col h-screen max-w-5xl mx-auto relative overflow-hidden">
+      {/* Layered playful background */}
+      <div className="absolute inset-0 bg-slate-950" />
       <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-[0.08]`}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.05] mix-blend-screen pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Ccircle cx='10' cy='10' r='1'/%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3Ccircle cx='50' cy='50' r='1'/%3E%3Cpath d='M20 20h10v10H20zM5 35h10v10H5zM35 5h10v10H35z' fill-opacity='0.1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-          backgroundSize: "60px 60px",
+          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15), transparent 60%), radial-gradient(circle at 80% 70%, rgba(255,255,255,0.12), transparent 55%)`,
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.035] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='rgba(255,255,255,0.25)' stroke-width='0.5'%3E%3Ccircle cx='8' cy='8' r='1'/%3E%3Ccircle cx='32' cy='32' r='1'/%3E%3Ccircle cx='56' cy='56' r='1'/%3E%3Cpath d='M24 24h8v8h-8zM6 42h8v8H6zM42 6h8v8h-8z' stroke='none' fill='rgba(255,255,255,0.25)'/%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: "64px 64px",
         }}
       />
 
-      {/* Dark gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 pointer-events-none" />
+      <ChatHeader
+        contactName={contactName}
+        contactAvatar={contactAvatar}
+        gradient={gradient}
+        personality={personality}
+      />
 
-      <ChatHeader contactName={contactName} contactAvatar={contactAvatar} />
+      {/* Messages area container */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5 relative">
+        {/* Empty state */}
+        {messages.length === 0 && !isLoadingLLM && (
+          <div className="flex items-center justify-center h-full animate-in fade-in zoom-in-50">
+            <div className="text-center max-w-sm">
+              <div
+                className={`inline-flex items-center justify-center mb-4 w-20 h-20 rounded-3xl bg-gradient-to-br ${gradient} shadow-lg shadow-black/40 ring-4 ring-white/5 relative overflow-hidden`}
+              >
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)]" />
+                <span className="font-extrabold text-white text-2xl drop-shadow">
+                  Hi
+                </span>
+              </div>
+              <p className="font-semibold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2 tracking-tight">
+                I am your {personality}
+              </p>
+              <p className="text-sm text-slate-400 leading-relaxed">
+                Let&apos;s start chatting. Share something or ask me a question
+                in your learning language.
+              </p>
+            </div>
+          </div>
+        )}
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 relative">
         {isLoadingLLM && messages.length === 0 && (
-          <div className="text-center py-8">
-            <div className="inline-flex items-center gap-2 text-slate-400">
+          <div className="text-center py-12 animate-in fade-in">
+            <div className="inline-flex items-center gap-2 text-slate-300 text-sm font-medium bg-slate-800/60 rounded-full px-5 py-2.5 shadow-inner shadow-black/40 backdrop-blur border border-white/10">
               <TypingIndicator />
               Starting conversation...
             </div>
           </div>
         )}
 
-        {messages.map((message) => (
+        {messages.map((message, idx) => (
           <MessageBubble
             key={message.id}
             message={message}
             isExpanded={isMessageExpanded(message.id)}
             translation={messageTranslations[message.id]}
             onToggleExpansion={handleMessageExpansion}
+            gradient={gradient}
+            index={idx}
           />
         ))}
 
         {isLoadingLLM && messages.length > 0 && (
           <div className="flex justify-start">
-            <div className="bg-slate-700/80 text-slate-100 rounded-2xl rounded-bl-md border border-slate-600/50 px-4 py-3 shadow-lg backdrop-blur">
+            <div className="bg-slate-800/70 backdrop-blur text-slate-100 rounded-3xl rounded-bl-xl border border-white/10 px-4 py-3 shadow-lg shadow-black/40">
               <div className="flex items-center gap-2">
                 <TypingIndicator />
               </div>
@@ -269,7 +308,6 @@ export default function ChatInterface() {
         placeholder="Type your response..."
       />
 
-      {/* Word Translations Menu */}
       <WordTranslationsMenu
         text={wordTranslationMenu.text}
         sourceLanguage={wordTranslationMenu.sourceLanguage}

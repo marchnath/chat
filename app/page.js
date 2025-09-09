@@ -78,7 +78,7 @@ export default function HomePage() {
         onProfileChange={handleProfileChange}
       />
 
-      <div className="max-w-3xl mx-auto px-4 pt-4 pb-28">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 pb-36">
         <header className="mb-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <button
@@ -98,8 +98,10 @@ export default function HomePage() {
             </button>
             <h1
               className={
-                "text-2xl font-semibold tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500 " +
-                (theme === "dark" ? "text-white" : "text-gray-900")
+                "text-3xl sm:text-4xl font-extrabold tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500 drop-shadow " +
+                (theme === "dark"
+                  ? "text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-rose-300"
+                  : "text-transparent bg-clip-text bg-gradient-to-r from-purple-700 via-pink-600 to-rose-600")
               }
             >
               Textipal

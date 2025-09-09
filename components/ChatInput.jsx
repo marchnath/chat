@@ -31,13 +31,11 @@ export default function ChatInput({
   };
 
   return (
-    <div className="bg-slate-800/90 backdrop-blur px-4 py-4 relative z-10">
+    <div className="bg-transparent px-4 py-4 relative z-10">
       <div className="flex items-end gap-3">
-        {/* Emoji button */}
         <button className="p-2 text-slate-400 hover:text-slate-300 transition-colors mb-1">
           <Smile className="w-6 h-6" />
         </button>
-
         <div className="flex-1 relative">
           <textarea
             ref={inputRef}
@@ -50,7 +48,6 @@ export default function ChatInput({
             disabled={isLoading}
           />
         </div>
-
         <button
           onClick={handleSend}
           disabled={!inputText.trim() || isLoading}

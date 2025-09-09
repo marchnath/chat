@@ -4,44 +4,57 @@ import { ArrowLeft, MoreVertical } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function ChatHeader({ contactName, contactAvatar }) {
+export default function ChatHeader({
+  contactName,
+  contactAvatar,
+  gradient,
+  personality,
+}) {
   const router = useRouter();
 
   return (
-    <div className="bg-slate-800/90 backdrop-blur border-b border-slate-700/50 px-4 py-3 sticky top-0 z-10">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="sticky top-0 z-20 px-4 sm:px-6 pt-4 pb-2">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 sm:gap-4">
           <button
             aria-label="Back"
             onClick={() => router.push("/")}
-            className="p-2 -ml-2 mr-1 rounded-lg hover:bg-slate-700/50 transition-colors"
+            className="p-2 -ml-2 mr-1 rounded-lg hover:bg-white/5 text-slate-300 hover:text-white transition"
           >
-            <ArrowLeft className="w-5 h-5 text-slate-300" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           {/^\/.+\.(png|jpg|jpeg|svg|gif|webp)$/i.test(contactAvatar) ? (
-            <Image
-              src={contactAvatar}
-              alt={contactName}
-              width={40}
-              height={40}
-              className="w-10 h-10 rounded-full object-cover"
-            />
+            <div className="relative">
+              <Image
+                src={contactAvatar}
+                alt={contactName}
+                width={44}
+                height={44}
+                className="w-11 h-11 rounded-2xl object-cover"
+              />
+              <span
+                aria-hidden
+                className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-br ${gradient} ring-2 ring-slate-950 shadow shadow-black/50 animate-pulse`}
+              />
+            </div>
           ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+            <div
+              className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center text-white text-sm font-extrabold`}
+            >
               {contactAvatar?.length <= 3 ? contactAvatar : contactAvatar[0]}
             </div>
           )}
-          <div>
-            <h1 className="font-semibold text-white leading-5">
+          <div className="leading-tight max-w-[14rem]">
+            <h1 className="font-extrabold tracking-tight text-white text-base sm:text-lg">
               {contactName}
             </h1>
-            <p className="text-xs text-slate-400">Conversation practice</p>
+            <p className="text-[10px] sm:text-xs font-medium text-slate-400">
+              {personality} practice partner
+            </p>
           </div>
         </div>
-
-        {/* Decorative Menu Button */}
-        <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors">
-          <MoreVertical className="w-5 h-5 text-slate-300" />
+        <button className="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition">
+          <MoreVertical className="w-5 h-5" />
         </button>
       </div>
     </div>
