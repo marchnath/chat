@@ -2,7 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Flame } from "lucide-react";
+// Removed Activity icon in favor of custom tongue icon
+// Replace custom tongue icon on home header with a dumbbell + notification badge
+import { Dumbbell } from "lucide-react";
+import Image from "next/image";
 import { contacts } from "@/lib/contacts";
 import useProfileStore from "@/lib/store";
 import ContactList from "@/components/ContactList";
@@ -68,23 +71,16 @@ export default function HomePage() {
         }}
       />
 
-      {/* Legacy sidebar kept for potential reuse; could be removed later */}
-      {/* <ProfileSidebar
-        isOpen={false}
-        onClose={() => {}}
-        theme={theme}
-        profile={currentProfile}
-        onProfileChange={handleProfileChange}
-      /> */}
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 pb-36">
         <header className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
               onClick={() => router.push("/profile")}
               aria-label="Open profile"
-              className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 via-blue-500 to-indigo-500 ring-2 ring-blue-400/40 shadow-md shadow-blue-600/30 hover:shadow-lg hover:-translate-y-0.5 transition"
-            />
+              className="group w-8 h-8 rounded-full overflow-hidden ring-2 ring-blue-400/40 shadow-md shadow-blue-600/30 hover:shadow-lg hover:-translate-y-0.5 transition relative bg-slate-800/50"
+            >
+              <span>I</span>
+            </button>
             <h1
               className={
                 "text-3xl sm:text-4xl font-extrabold tracking-tight animate-in fade-in slide-in-from-bottom-2 duration-500 drop-shadow " +
@@ -96,10 +92,17 @@ export default function HomePage() {
               Textipal
             </h1>
           </div>
-          <div className="flex items-center gap-1 text-sky-500 font-bold text-sm select-none">
-            <Flame className="w-5 h-5" />
-            <span>3</span>
-          </div>
+          <button
+            onClick={() => router.push("/custom-exercise")}
+            aria-label="Open custom exercise (1 new)"
+            className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur  border-white/10 shadow-sm shadow-slate-900/40 transition text-slate-200 hover:text-white"
+          >
+            <Dumbbell className="w-6 h-6" />
+            <span className="absolute -top-1.5 -right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-600 text-white shadow ring-2 ring-slate-900">
+              1
+            </span>
+            <span className="sr-only">1 new custom exercise update</span>
+          </button>
         </header>
 
         <ContactList contacts={contacts} theme={theme} />

@@ -98,20 +98,9 @@ export default function ProfilePage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1
-              className={
-                "text-3xl sm:text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-400 drop-shadow"
-              }
-            >
-              Your Profile
-            </h1>
           </div>
 
           <div className="flex items-center gap-5">
-            <div className="flex items-center gap-1 text-sky-400 font-bold text-sm select-none">
-              <Flame className="w-5 h-5" />
-              <span>{streakDays}</span>
-            </div>
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"

@@ -59,7 +59,7 @@ export default function ContactList({ contacts, theme }) {
               (theme === "dark"
                 ? "bg-white/5 hover:bg-white/10"
                 : "bg-white/80 hover:bg-white/95") +
-              " backdrop-blur border " +
+              " backdrop-blur " +
               (theme === "dark"
                 ? "border-white/10 shadow-[0_4px_16px_-2px_rgba(0,0,0,0.6)]"
                 : "border-white/60 shadow-[0_6px_18px_-4px_rgba(0,0,0,0.15)]") +
