@@ -95,10 +95,10 @@ export default function HomePage() {
           <button
             onClick={() => router.push("/custom-exercise")}
             aria-label="Open custom exercise (1 new)"
-            className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur  border-white/10 shadow-sm shadow-slate-900/40 transition text-slate-200 hover:text-white"
+            className="relative p-2 rounded-xl bg-white/5 hover:bg-white/20 backdrop-blur  border-white/10 shadow-sm shadow-slate-900/40 transition text-slate-200 hover:text-white"
           >
-            <Dumbbell className="w-6 h-6" />
-            <span className="absolute -top-1.5 -right-1.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-600 text-white shadow ring-2 ring-slate-900">
+            <Dumbbell className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 text-[10px] font-bold px-1  rounded-full bg-rose-600 text-white shadow ring-2 ring-slate-900">
               1
             </span>
             <span className="sr-only">1 new custom exercise update</span>
