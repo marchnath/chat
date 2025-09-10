@@ -27,8 +27,8 @@ export default function ChatInterface() {
   const contactAvatar = searchParams.get("avatar") || "/avatars/avatar0.png";
 
   // Get contact personality information
-  const contact = getContactByName(contactName);
-  const personality = contact?.personality || "friend";
+  const contact = getContactByName(contactName); // still used for avatar/name only
+  const { personality } = useProfileStore.getState();
   const gradient = getPersonalityGradient(personality);
 
   // Store state
@@ -250,7 +250,7 @@ export default function ChatInterface() {
                   Hi
                 </span>
               </div>
-              <p className="font-semibold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2 tracking-tight">
+              <p className="font-semibold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2 tracking-tight capitalize">
                 I am your {personality}
               </p>
               <p className="text-sm text-slate-400 leading-relaxed">

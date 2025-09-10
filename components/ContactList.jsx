@@ -22,16 +22,6 @@ export default function ContactList({ contacts, theme }) {
     );
   }
 
-  // Bubbly / bold style mapping
-  const personalityGradients = {
-    spouse: "from-pink-500 to-rose-500",
-    friend: "from-indigo-500 to-purple-500",
-    stranger: "from-teal-500 to-emerald-500",
-    colleague: "from-amber-500 to-orange-500",
-    client: "from-sky-500 to-cyan-500",
-    neutral: "from-slate-500 to-slate-600",
-  };
-
   const rotateClasses = ["-rotate-1", "rotate-1", "-rotate-2", "rotate-2", ""];
 
   return (
@@ -43,9 +33,6 @@ export default function ContactList({ contacts, theme }) {
       }
     >
       {contacts.map((contact, idx) => {
-        const gradient =
-          personalityGradients[contact.personality] ||
-          personalityGradients.friend;
         const rotate = rotateClasses[idx % rotateClasses.length];
         // Occasionally feature a larger card for a playful spray effect
         const feature = idx % 7 === 0 ? "sm:col-span-2 sm:row-span-2" : "";
