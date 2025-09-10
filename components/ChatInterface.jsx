@@ -16,7 +16,6 @@ import TypingIndicator from "./TypingIndicator";
 import HintBubble from "./HintBubble";
 import ChatInput from "./ChatInput";
 import WordTranslationsMenu from "./WordTranslationsMenu";
-import { getPersonalityGradient } from "@/lib/gradients";
 
 export default function ChatInterface() {
   const searchParams = useSearchParams();
@@ -26,10 +25,8 @@ export default function ChatInterface() {
   const contactName = searchParams.get("name") || "Pal";
   const contactAvatar = searchParams.get("avatar") || "/avatars/avatar0.png";
 
-  // Get contact personality information
+  // Get contact information
   const contact = getContactByName(contactName); // still used for avatar/name only
-  const { personality } = useProfileStore.getState();
-  const gradient = getPersonalityGradient(personality);
 
   // Store state
   const {
@@ -150,7 +147,6 @@ export default function ChatInterface() {
         language: selectedLanguage,
         nativeLanguage: getNativeLanguageForTranslation(),
         proficiencyLevel: learningProficiency,
-        personality,
         contactName,
       });
     } catch (error) {
@@ -229,12 +225,7 @@ export default function ChatInterface() {
         }}
       />
 
-      <ChatHeader
-        contactName={contactName}
-        contactAvatar={contactAvatar}
-        gradient={gradient}
-        personality={personality}
-      />
+      <ChatHeader contactName={contactName} contactAvatar={contactAvatar} />
 
       {/* Messages area container */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5 relative">
@@ -251,7 +242,7 @@ export default function ChatInterface() {
                 </span>
               </div>
               <p className="font-semibold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2 tracking-tight capitalize">
-                I am your {personality}
+                Let's chat!
               </p>
               <p className="text-sm text-slate-400 leading-relaxed">
                 Let&apos;s start chatting. Share something or ask me a question
@@ -277,7 +268,6 @@ export default function ChatInterface() {
             isExpanded={isMessageExpanded(message.id)}
             translation={messageTranslations[message.id]}
             onToggleExpansion={handleMessageExpansion}
-            gradient={gradient}
             index={idx}
           />
         ))}

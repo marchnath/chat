@@ -67,7 +67,7 @@ export default function ContactList({ contacts, theme }) {
             </span>
 
             <div
-              className={`relative mb-3 p-1 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg shadow-black/10 ring-2 ring-emerald-500`}
+              className={`relative mb-3 p-1 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg shadow-black/10 ring-1 ring-cyan-500`}
             >
               <Image
                 src={contact.avatar}

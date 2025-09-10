@@ -15,7 +15,6 @@ export async function POST(req) {
     language = "english",
     nativeLanguage = "english",
     proficiencyLevel = "intermediate",
-    personality = "friend",
     contactName = "AI Partner",
   } = await req.json();
 
@@ -38,7 +37,6 @@ export async function POST(req) {
         language,
         nativeLanguage,
         proficiencyLevel,
-        personality,
         contactName,
       });
 
@@ -71,7 +69,6 @@ export async function POST(req) {
           language,
           nativeLanguage,
           proficiencyLevel,
-          personality,
           contactName,
         });
 

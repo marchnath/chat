@@ -12,7 +12,7 @@ export function useChat() {
   const sendMessage = useCallback(
     async (
       userMessage,
-      { language, nativeLanguage, proficiencyLevel, personality, contactName }
+      { language, nativeLanguage, proficiencyLevel, contactName }
     ) => {
       // Add user message
       const userMsg = {
@@ -33,7 +33,6 @@ export function useChat() {
           language,
           nativeLanguage,
           proficiencyLevel,
-          personality,
           contactName,
         });
 
