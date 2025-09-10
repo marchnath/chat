@@ -77,10 +77,10 @@ export default function ChatInterface() {
     if (_hasHydrated) {
       const language = getSelectedChatLanguage();
       setSelectedLanguage(language);
-      const hint = getInitialHint(language);
+      const hint = getInitialHint(language, contactName); // Pass contactName as the mode
       setInitialHint(hint);
     }
-  }, [_hasHydrated, learningLanguage, learningProficiency]);
+  }, [_hasHydrated, learningLanguage, learningProficiency, contactName]); // Add contactName to dependencies
 
   // Set initial hint and translation only when starting a new conversation
   useEffect(() => {
