@@ -75,15 +75,12 @@ export default function ContactList({ contacts, theme }) {
               className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             >
               <span
-                className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl bg-gradient-to-br ${gradient} opacity-30`}
+                className={`absolute -top-10 -right-10 w-40 h-40 rounded-full blur-3xl bg-gradient-to-br from-teal-500 to-emerald-500 opacity-30`}
               />
             </span>
 
             <div
-              className={
-                `relative mb-3 p-1 rounded-full bg-gradient-to-br ${gradient} shadow-lg shadow-black/10 ring-2 ` +
-                (theme === "dark" ? "ring-white/10" : "ring-white/50")
-              }
+              className={`relative mb-3 p-1 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg shadow-black/10 ring-2 ring-emerald-500`}
             >
               <Image
                 src={contact.avatar}
@@ -92,15 +89,6 @@ export default function ContactList({ contacts, theme }) {
                 height={80}
                 className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover select-none"
                 draggable={false}
-              />
-              {/* Pulse status dot */}
-              <span
-                aria-hidden
-                className={
-                  `absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-br ${gradient} shadow-inner shadow-black/30 animate-pulse` +
-                  " ring-2 " +
-                  (theme === "dark" ? "ring-gray-900" : "ring-white")
-                }
               />
             </div>
 
@@ -125,15 +113,6 @@ export default function ContactList({ contacts, theme }) {
             >
               {contact.last}
             </p>
-
-            {/* Subtle underline accent */}
-            <span
-              aria-hidden
-              className={
-                `mt-4 mb-1 h-1 w-8 rounded-full bg-gradient-to-r ${gradient} opacity-70 group-hover:opacity-100 transition-opacity` +
-                (feature ? " md:w-12" : "")
-              }
-            />
           </li>
         );
       })}

@@ -213,7 +213,7 @@ export default function ChatInterface() {
       {/* Layered playful background */}
       <div className="absolute inset-0 bg-slate-950" />
       <div
-        className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-[0.08]`}
+        className={`absolute inset-0 bg-gradient-to-br from-teal-500 to-emerald-500 opacity-[0.08]`}
       />
       <div
         className="absolute inset-0 opacity-[0.05] mix-blend-screen pointer-events-none"
@@ -243,7 +243,7 @@ export default function ChatInterface() {
           <div className="flex items-center justify-center h-full animate-in fade-in zoom-in-50">
             <div className="text-center max-w-sm">
               <div
-                className={`inline-flex items-center justify-center mb-4 w-20 h-20 rounded-3xl bg-gradient-to-br ${gradient} shadow-lg shadow-black/40 ring-4 ring-white/5 relative overflow-hidden`}
+                className={`inline-flex items-center justify-center mb-4 w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500 to-emerald-500 shadow-lg shadow-black/40 ring-4 ring-white/5 relative overflow-hidden`}
               >
                 <span className="absolute inset-0 bg-[radial-gradient(circle_at_70%_30%,rgba(255,255,255,0.35),transparent_60%)]" />
                 <span className="font-extrabold text-white text-2xl drop-shadow">

@@ -34,14 +34,10 @@ export default function ChatHeader({
                 height={44}
                 className="w-11 h-11 rounded-full object-cover"
               />
-              <span
-                aria-hidden
-                className={`absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-br ${gradient} ring-2 ring-slate-950 shadow shadow-black/50 animate-pulse`}
-              />
             </div>
           ) : (
             <div
-              className={`w-11 h-11 bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center text-white text-sm font-extrabold`}
+              className={`w-11 h-11 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-extrabold`}
             >
               {contactAvatar?.length <= 3 ? contactAvatar : contactAvatar[0]}
             </div>
