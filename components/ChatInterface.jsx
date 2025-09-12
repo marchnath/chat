@@ -48,12 +48,14 @@ export default function ChatInterface() {
     currentHint,
     messageTranslations,
     hintTranslation,
+    isConversationLoaded,
     sendMessage,
     translateMessage,
     setInitialHint: setChatInitialHint,
     setHintTranslation,
     clearTranslations,
-  } = useChat();
+    clearChat,
+  } = useChat(contactName);
 
   const {
     toggleExpansion: toggleMessageExpansion,
@@ -84,7 +86,12 @@ export default function ChatInterface() {
 
   // Set initial hint and translation only when starting a new conversation
   useEffect(() => {
-    if (initialHint && messages.length === 0) {
+    if (
+      initialHint &&
+      messages.length === 0 &&
+      isConversationLoaded &&
+      _hasHydrated
+    ) {
       setChatInitialHint(initialHint);
 
       // Load initial hint translation only if languages are different
@@ -126,6 +133,8 @@ export default function ChatInterface() {
     translateMessage,
     selectedLanguage,
     messages.length,
+    isConversationLoaded,
+    _hasHydrated,
   ]);
 
   // Reset expansions when language changes
@@ -225,7 +234,11 @@ export default function ChatInterface() {
         }}
       />
 
-      <ChatHeader contactName={contactName} contactAvatar={contactAvatar} />
+      <ChatHeader
+        contactName={contactName}
+        contactAvatar={contactAvatar}
+        onClearChat={clearChat}
+      />
 
       {/* Messages area container */}
       <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-5 relative">

@@ -10,6 +10,11 @@ import { contacts } from "@/lib/contacts";
 import useProfileStore from "@/lib/store";
 import ContactList from "@/components/ContactList";
 
+// Import debug utilities in development
+if (process.env.NODE_ENV === "development") {
+  import("@/lib/chatDebug");
+}
+
 export default function HomePage() {
   const router = useRouter();
 

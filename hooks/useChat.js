@@ -1,13 +1,65 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import ChatService from "@/lib/services/chatService";
 import { MESSAGE_SENDERS } from "@/lib/constants";
+import {
+  saveConversation,
+  loadConversation,
+  clearConversation,
+} from "@/lib/chatStorage";
 
-export function useChat() {
+export function useChat(contactName) {
   const [messages, setMessages] = useState([]);
   const [isLoadingLLM, setIsLoadingLLM] = useState(false);
   const [currentHint, setCurrentHint] = useState("");
   const [messageTranslations, setMessageTranslations] = useState({});
   const [hintTranslation, setHintTranslation] = useState("");
+  const [isConversationLoaded, setIsConversationLoaded] = useState(false);
+
+  // Load conversation from localStorage when contactName changes
+  useEffect(() => {
+    if (contactName) {
+      const savedConversation = loadConversation(contactName);
+      if (savedConversation) {
+        setMessages(savedConversation.messages || []);
+        setCurrentHint(savedConversation.currentHint || "");
+        setMessageTranslations(savedConversation.messageTranslations || {});
+        setHintTranslation(savedConversation.hintTranslation || "");
+      } else {
+        // Reset state for new conversation
+        setMessages([]);
+        setCurrentHint("");
+        setMessageTranslations({});
+        setHintTranslation("");
+      }
+      setIsConversationLoaded(true);
+    }
+  }, [contactName]);
+
+  // Save conversation whenever state changes (debounced)
+  useEffect(() => {
+    if (contactName && isConversationLoaded) {
+      const conversationData = {
+        messages,
+        currentHint,
+        messageTranslations,
+        hintTranslation,
+      };
+
+      // Debounce saving to avoid excessive localStorage writes
+      const timeoutId = setTimeout(() => {
+        saveConversation(contactName, conversationData);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    contactName,
+    messages,
+    currentHint,
+    messageTranslations,
+    hintTranslation,
+    isConversationLoaded,
+  ]);
 
   const sendMessage = useCallback(
     async (
@@ -120,16 +172,28 @@ export function useChat() {
     setHintTranslation("");
   }, []);
 
+  const clearChat = useCallback(() => {
+    if (contactName) {
+      clearConversation(contactName);
+      setMessages([]);
+      setCurrentHint("");
+      setMessageTranslations({});
+      setHintTranslation("");
+    }
+  }, [contactName]);
+
   return {
     messages,
     isLoadingLLM,
     currentHint,
     messageTranslations,
     hintTranslation,
+    isConversationLoaded,
     sendMessage,
     translateMessage,
     setInitialHint,
     setHintTranslation,
     clearTranslations,
+    clearChat,
   };
 }

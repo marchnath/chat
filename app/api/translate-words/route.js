@@ -5,31 +5,109 @@ import {
   extractWordsFromText,
 } from "@/lib/libreTranslate";
 
-// Function to translate a single word using LibreTranslate
-async function translateWord(word, sourceLanguage, targetLanguage) {
+// Optimized function to translate multiple words at once
+async function translateWordsBatch(words, sourceLanguage, targetLanguage) {
   const sourceLang = mapLanguageToLibreTranslateCode(sourceLanguage);
   const targetLang = mapLanguageToLibreTranslateCode(targetLanguage);
 
-  console.log(`Translating "${word}" from ${sourceLang} to ${targetLang}`);
+  console.log(
+    `Translating ${words.length} words from ${sourceLang} to ${targetLang}`
+  );
 
   try {
-    const translation = await translateWithLibreTranslate(
-      word,
+    // Join words with a unique separator that's unlikely to be in translations
+    const separator = " ||||| ";
+    const combinedText = words.join(separator);
+
+    console.log(
+      `Combined text for translation: ${combinedText.substring(0, 200)}...`
+    );
+
+    const translatedText = await translateWithLibreTranslate(
+      combinedText,
       sourceLang,
       targetLang
     );
-    console.log(`Translation result: "${word}" -> "${translation}"`);
 
-    // If translation is the same as original and languages are different,
-    // it might be a proper noun or untranslatable word
-    if (translation === word && sourceLang !== targetLang) {
-      console.log(`No translation found for "${word}", keeping original`);
+    console.log(
+      `Batch translation result: ${translatedText.substring(0, 200)}...`
+    );
+
+    // Split the translated text by the separator
+    let translatedWords = translatedText.split(separator);
+
+    // Handle cases where separator might have been translated or modified
+    if (translatedWords.length !== words.length) {
+      console.log(
+        `Separator mismatch. Expected ${words.length} parts, got ${translatedWords.length}`
+      );
+
+      // Try alternative separators that might have been translated
+      const altSeparators = [
+        " ||||| ",
+        " | | | | | ",
+        " |||||",
+        "||||| ",
+        " |||| ",
+        " ||||",
+      ];
+
+      for (const altSep of altSeparators) {
+        const altSplit = translatedText.split(altSep);
+        if (altSplit.length === words.length) {
+          translatedWords = altSplit;
+          console.log(`Found correct split with separator: "${altSep}"`);
+          break;
+        }
+      }
+
+      // If still no match, split by spaces and try to match count
+      if (translatedWords.length !== words.length) {
+        const spaceSplit = translatedText.split(/\s+/);
+        if (spaceSplit.length >= words.length) {
+          translatedWords = spaceSplit.slice(0, words.length);
+          console.log(`Using space split fallback`);
+        }
+      }
     }
 
-    return translation || word;
+    // Create word-translation pairs
+    const wordTranslations = words.map((word, index) => {
+      let translation = translatedWords[index] || word;
+
+      // Clean up the translation
+      translation = translation.trim();
+
+      // Remove any remaining separator artifacts
+      translation = translation.replace(/\|+/g, "").trim();
+
+      // If translation is empty or just separators, use original word
+      if (!translation || translation === "") {
+        translation = word;
+      }
+
+      // If translation is the same as original and languages are different,
+      // it might be a proper noun or untranslatable word
+      if (translation === word && sourceLang !== targetLang) {
+        console.log(`No translation found for "${word}", keeping original`);
+      }
+
+      return {
+        word,
+        translation: translation || word,
+      };
+    });
+
+    console.log(`Processed ${wordTranslations.length} word translations`);
+    return wordTranslations;
   } catch (error) {
-    console.error(`Error translating word "${word}":`, error.message);
-    return word; // Return original word if translation fails
+    console.error(`Error in batch translation:`, error.message);
+
+    // Fallback: return words with original text if batch translation fails
+    return words.map((word) => ({
+      word,
+      translation: word,
+    }));
   }
 }
 
@@ -53,7 +131,7 @@ export async function POST(request) {
       );
     }
 
-    // Extract words from the text
+    // Extract words from the text (improved to filter out emojis and non-words)
     const words = extractWordsFromText(text);
     console.log(`Extracted ${words.length} words:`, words.slice(0, 10));
 
@@ -61,32 +139,12 @@ export async function POST(request) {
       return NextResponse.json({ wordTranslations: [] });
     }
 
-    // Translate each word
-    const wordTranslations = [];
-
-    // Process words in batches to avoid overwhelming the API
-    const batchSize = 3; // Reduced batch size for better debugging
-    for (let i = 0; i < words.length; i += batchSize) {
-      const batch = words.slice(i, i + batchSize);
-      console.log(`Processing batch ${i / batchSize + 1}:`, batch);
-
-      const batchPromises = batch.map(async (word) => {
-        const translation = await translateWord(
-          word,
-          sourceLanguage,
-          targetLanguage
-        );
-        return { word, translation };
-      });
-
-      const batchResults = await Promise.all(batchPromises);
-      wordTranslations.push(...batchResults);
-
-      // Add small delay between batches to be respectful to the API
-      if (i + batchSize < words.length) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-      }
-    }
+    // Use batch translation for efficiency
+    const wordTranslations = await translateWordsBatch(
+      words,
+      sourceLanguage,
+      targetLanguage
+    );
 
     console.log(`Final word translations:`, wordTranslations.slice(0, 5));
     return NextResponse.json({ wordTranslations });
