@@ -2,21 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import useProfileStore from "@/lib/store";
-
-// Map language display names to Speech API language codes
-const LANGUAGE_CODE_MAP = {
-  english: "en-US",
-  spanish: "es-ES",
-  french: "fr-FR",
-  german: "de-DE",
-  italian: "it-IT",
-  portuguese: "pt-PT",
-  russian: "ru-RU",
-  japanese: "ja-JP",
-  korean: "ko-KR",
-  chinese: "zh-CN",
-  arabic: "ar-SA",
-};
+import { SPEECH_LANG_CODE_MAP } from "@/lib/constants";
 
 export const useTTS = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -30,7 +16,7 @@ export const useTTS = () => {
 
   const getLanguageCode = useCallback(() => {
     const langKey = learningLanguage.toLowerCase();
-    return LANGUAGE_CODE_MAP[langKey] || "en-US";
+    return SPEECH_LANG_CODE_MAP[langKey] || "en-US";
   }, [learningLanguage]);
 
   const speak = useCallback(
