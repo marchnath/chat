@@ -141,3 +141,12 @@
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   @apply bg-slate-500;
 }
+
+/* Utility to hide scrollbars but keep scrollability */
+.scrollbar-hidden {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}

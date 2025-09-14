@@ -1,6 +1,6 @@
 "use client";
 
-import { Send, Smile, Mic, MicOff } from "lucide-react";
+import { Send, Mic, MicOff } from "lucide-react";
 import { useState, useRef, useMemo } from "react";
 import useProfileStore from "@/lib/store";
 import { SPEECH_LANG_CODE_MAP } from "@/lib/constants";
@@ -39,7 +39,12 @@ export default function ChatInput({
   }, [learningLanguage]);
 
   const handleInputChange = (e) => {
-    setInputText(e.target.value);
+    const val = e.target.value;
+    // If user types while recording, stop recording and switch to send
+    if (isRecordingRef.current) {
+      stopRecording();
+    }
+    setInputText(val);
   };
 
   const handleSend = () => {
@@ -125,9 +130,6 @@ export default function ChatInput({
   return (
     <div className="bg-transparent px-4 py-4 relative z-10">
       <div className="flex items-end gap-3">
-        <button className="p-2 text-slate-400 hover:text-slate-300 transition-colors mb-1">
-          <Smile className="w-6 h-6" />
-        </button>
         <div className="flex-1 relative">
           <textarea
             ref={inputRef}
@@ -135,40 +137,55 @@ export default function ChatInput({
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
             placeholder={placeholder}
-            className="w-full px-4 py-3 pr-12 bg-transparent text-slate-100 placeholder-slate-400 rounded-3xl resize-none max-h-36 focus:outline-none"
+            className="w-full px-4 py-3 pr-12 bg-transparent text-slate-100 placeholder-slate-400 rounded-3xl resize-none max-h-36 focus:outline-none scrollbar-hidden"
             rows="1"
             disabled={isLoading}
           />
         </div>
-        {/* Microphone toggle for speech-to-text. Uses selected learning language. */}
+        {/* Unified action button: Mic (idle), MicOff (recording), Send (has text) */}
         <button
-          onClick={() => (isRecordingRef.current ? stopRecording() : startRecording())}
-          disabled={!isSTTSupported || isLoading}
-          className={`p-2 mb-1 transition-colors duration-200 ${
-            isRecordingRef.current
-              ? "text-red-400 hover:text-red-300"
-              : "text-slate-400 hover:text-slate-300 disabled:text-slate-600 disabled:cursor-not-allowed"
+          onClick={() => {
+            const hasText = inputText.trim().length > 0;
+            if (hasText) {
+              handleSend();
+              return;
+            }
+            if (isRecordingRef.current) {
+              stopRecording();
+            } else {
+              startRecording();
+            }
+          }}
+          disabled={isLoading || (!isSTTSupported && !inputText.trim())}
+          className={`mb-1 inline-flex items-center justify-center w-9 h-9 rounded-full border transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
+            inputText.trim().length > 0
+              ? "border-blue-500/40 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+              : isRecordingRef.current
+              ? "border-red-500/50 bg-red-500/15 text-red-400 hover:bg-red-500/25 animate-pulse"
+              : "border-slate-700 bg-slate-800/60 text-slate-300 hover:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:bg-slate-800/40 disabled:cursor-not-allowed"
           }`}
-          aria-label={isRecordingRef.current ? "Stop voice input" : "Start voice input"}
+          aria-label={
+            inputText.trim().length > 0
+              ? "Send"
+              : isRecordingRef.current
+              ? "Stop voice input"
+              : "Start voice input"
+          }
           title={
-            !isSTTSupported
+            inputText.trim().length > 0
+              ? "Send message"
+              : !isSTTSupported
               ? "Voice input not supported in this browser"
               : `Voice input: ${languageCode}`
           }
         >
-          {isRecordingRef.current ? (
-            <MicOff className="w-6 h-6" />
+          {inputText.trim().length > 0 ? (
+            <Send className="w-5 h-5" />
+          ) : isRecordingRef.current ? (
+            <MicOff className="w-5 h-5" />
           ) : (
-            <Mic className="w-6 h-6" />
+            <Mic className="w-5 h-5" />
           )}
-        </button>
-        <button
-          onClick={handleSend}
-          disabled={!inputText.trim() || isLoading}
-          className="text-blue-400 hover:text-blue-300 disabled:text-slate-600 disabled:cursor-not-allowed p-2 transition-colors duration-200 mb-1"
-          aria-label="Send"
-        >
-          <Send className="w-6 h-6 fill-current" />
         </button>
       </div>
     </div>
