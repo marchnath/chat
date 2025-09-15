@@ -64,8 +64,6 @@ export default function ChatInterface() {
   } = useExpandableItems();
 
   const [isHintExpanded, setIsHintExpanded] = useState(false);
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [hasInputText, setHasInputText] = useState(false);
 
   // Auto-scroll to bottom
   const scrollToBottom = () => {
@@ -305,15 +303,12 @@ export default function ChatInterface() {
         translation={hintTranslation}
         isExpanded={isHintExpanded}
         onToggle={handleHintExpansion}
-        isVisible={!(isInputFocused && hasInputText)}
       />
 
       <ChatInput
         onSendMessage={handleSendMessage}
         isLoading={isLoadingLLM}
         placeholder="Type your response..."
-        onFocusChange={setIsInputFocused}
-        onHasTextChange={setHasInputText}
       />
 
       <WordTranslationsMenu

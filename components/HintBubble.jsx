@@ -13,7 +13,6 @@ export default function HintBubble({
   translation,
   isExpanded,
   onToggle,
-  isVisible = true,
   // gradient prop kept for potential future use but not applied (user wants blue like user messages)
 }) {
   const { showWordTranslationMenu } = useProfileStore();
@@ -48,7 +47,7 @@ export default function HintBubble({
   };
 
   return (
-    <div className={`mx-4 sm:mx-6 relative z-10 ${!isVisible ? "hidden" : ""}`}>
+    <div className="mx-4 sm:mx-6 relative z-10">
       <div className="relative">
         <div
           className="group relative bg-blue-600 text-white rounded-t-3xl rounded-bl-3xl rounded-br-none px-5 py-4 pr-14 shadow-lg cursor-pointer transition-colors hover:bg-blue-600/90 overflow-hidden"

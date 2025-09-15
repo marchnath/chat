@@ -1,7 +1,7 @@
 "use client";
 
 import { Send, Mic, MicOff } from "lucide-react";
-import { useState, useRef, useMemo, useEffect } from "react";
+import { useState, useRef, useMemo } from "react";
 import useProfileStore from "@/lib/store";
 import { SPEECH_LANG_CODE_MAP } from "@/lib/constants";
 
@@ -9,8 +9,6 @@ export default function ChatInput({
   onSendMessage,
   isLoading,
   placeholder = "Type your response...",
-  onFocusChange, // optional: notify parent when textarea focus changes
-  onHasTextChange, // optional: notify parent when textarea has any text
 }) {
   const [inputText, setInputText] = useState("");
   const inputRef = useRef(null);
@@ -48,13 +46,6 @@ export default function ChatInput({
     }
     setInputText(val);
   };
-
-  // Notify parent whenever text emptiness changes (covers typing, STT, and clearing)
-  useEffect(() => {
-    if (onHasTextChange) {
-      onHasTextChange(inputText.trim().length > 0);
-    }
-  }, [inputText, onHasTextChange]);
 
   const handleSend = () => {
     const trimmed = inputText.trim();
@@ -153,8 +144,6 @@ export default function ChatInput({
             value={inputText}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            onFocus={() => onFocusChange && onFocusChange(true)}
-            onBlur={() => onFocusChange && onFocusChange(false)}
             placeholder={placeholder}
             className="w-full px-4 py-3 pr-12 bg-transparent text-slate-100 placeholder-slate-400 rounded-3xl resize-none max-h-36 focus:outline-none scrollbar-hidden"
             rows="1"
