@@ -34,5 +34,28 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
 # chat
+
 # chat
+
+## Speech-to-Text (Microphone) notes
+
+This app uses the Web Speech Recognition API when available. Behavior varies by browser, especially on mobile.
+
+- Desktop (Chrome/Edge/Safari): Continuous + interim results are used for live text. We merge partial/final segments and remove duplicates.
+- iOS Safari: The browser may aggressively repeat words/phrases and ignore `continuous` mode. For better accuracy on iOS we:
+  - Disable `continuous` and `interimResults` for short, stable utterances.
+  - Auto-restart listening after each utterance while recording is active.
+  - De-duplicate repeated words and repeated short phrases (bigrams–6-grams) when merging.
+
+Tips
+
+- Ensure your learning language matches what you speak; we set `recognition.lang` accordingly.
+- Reduce background noise (macOS: System Settings → Sound → Input).
+- If duplication persists on mobile, try shorter pauses and sentences; iOS often re-emits overlapping chunks.
+
+Troubleshooting
+
+- If your browser does not support speech recognition, the mic button will be disabled. Use desktop Chrome/Edge or Safari.
+- Grant microphone permission when prompted.

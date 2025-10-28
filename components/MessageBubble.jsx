@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { Languages } from "lucide-react";
 import { MESSAGE_SENDERS } from "@/lib/constants";
 import useProfileStore, {
@@ -17,10 +18,37 @@ export default function MessageBubble({
   // gradient prop retained for interface compatibility but not used now for readability
   gradient,
   index,
+  isLatestAiMessage = false, // New prop to identify the latest AI message
 }) {
   const isAiMessage = message.sender === MESSAGE_SENDERS.PERSON_A;
   const { showWordTranslationMenu } = useProfileStore();
-  const { toggle: toggleTTS, isSpeaking, isLoading, isSupported } = useTTS();
+  const {
+    toggle: toggleTTS,
+    speak,
+    isSpeaking,
+    isLoading,
+    isSupported,
+  } = useTTS();
+  const hasAutoPlayedRef = useRef(false);
+
+  // Auto-play TTS for the latest AI message when it first appears
+  useEffect(() => {
+    if (
+      isAiMessage &&
+      isLatestAiMessage &&
+      isSupported &&
+      message.text &&
+      !hasAutoPlayedRef.current
+    ) {
+      // Small delay to ensure the message is rendered and visible
+      const timer = setTimeout(() => {
+        speak(message.text);
+        hasAutoPlayedRef.current = true;
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isAiMessage, isLatestAiMessage, isSupported, message.text, speak]);
 
   const handleClick = () => {
     if (isAiMessage) {

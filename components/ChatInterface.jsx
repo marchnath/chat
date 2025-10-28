@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { getInitialHint, getHintTranslation } from "@/lib/conversationData";
 import { getContactByName } from "@/lib/contacts";
+import { MESSAGE_SENDERS } from "@/lib/constants";
 import useProfileStore, {
   getSelectedChatLanguage,
   getNativeLanguageForTranslation,
@@ -26,7 +27,8 @@ export default function ChatInterface() {
   const contactAvatar = searchParams.get("avatar") || "/avatars/avatar0.png";
 
   // Get contact information
-  const contact = getContactByName(contactName); // still used for avatar/name only
+  const contact = getContactByName(contactName); // used to derive avatar/display name for UI
+  const displayName = contact?.displayName || contactName;
 
   // Store state
   const {
@@ -235,7 +237,7 @@ export default function ChatInterface() {
       />
 
       <ChatHeader
-        contactName={contactName}
+        contactName={displayName}
         contactAvatar={contactAvatar}
         onClearChat={clearChat}
       />
@@ -274,16 +276,26 @@ export default function ChatInterface() {
           </div>
         )}
 
-        {messages.map((message, idx) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            isExpanded={isMessageExpanded(message.id)}
-            translation={messageTranslations[message.id]}
-            onToggleExpansion={handleMessageExpansion}
-            index={idx}
-          />
-        ))}
+        {messages.map((message, idx) => {
+          // Find the last AI message to enable auto-play for it
+          const lastAiMessageIndex = messages
+            .map((msg, i) => (msg.sender === MESSAGE_SENDERS.PERSON_A ? i : -1))
+            .filter((i) => i !== -1)
+            .pop();
+          const isLatestAiMessage = idx === lastAiMessageIndex;
+
+          return (
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isExpanded={isMessageExpanded(message.id)}
+              translation={messageTranslations[message.id]}
+              onToggleExpansion={handleMessageExpansion}
+              index={idx}
+              isLatestAiMessage={isLatestAiMessage}
+            />
+          );
+        })}
 
         {isLoadingLLM && messages.length > 0 && (
           <div className="flex justify-start">
@@ -309,6 +321,7 @@ export default function ChatInterface() {
         onSendMessage={handleSendMessage}
         isLoading={isLoadingLLM}
         placeholder="Type your response..."
+        currentHint={currentHint}
       />
 
       <WordTranslationsMenu

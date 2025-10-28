@@ -4,21 +4,30 @@ import { Send, Mic, MicOff } from "lucide-react";
 import { useState, useRef, useMemo } from "react";
 import useProfileStore from "@/lib/store";
 import { SPEECH_LANG_CODE_MAP } from "@/lib/constants";
+import { useTTS } from "@/hooks/useTTS";
 
 export default function ChatInput({
   onSendMessage,
   isLoading,
   placeholder = "Type your response...",
+  currentHint,
 }) {
   const [inputText, setInputText] = useState("");
   const inputRef = useRef(null);
+  const hasPlayedHintRef = useRef(false);
   // Speech recognition state/refs
   const recognitionRef = useRef(null);
   const isRecordingRef = useRef(false);
   const baseTextRef = useRef("");
   const finalTranscriptRef = useRef("");
+  const manualStopRef = useRef(false);
 
   const { learningLanguage } = useProfileStore();
+  const {
+    speak: speakTTS,
+    stop: stopTTS,
+    isSupported: isTTSSupported,
+  } = useTTS();
 
   // Determine if browser supports Web Speech Recognition
   const SpeechRecognition = useMemo(() => {
@@ -32,6 +41,12 @@ export default function ChatInput({
   }, []);
 
   const isSTTSupported = !!SpeechRecognition;
+
+  // Detect iOS Safari / mobile quirks
+  const isIOS = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }, []);
 
   const languageCode = useMemo(() => {
     const key = (learningLanguage || "English").toLowerCase();
@@ -62,6 +77,69 @@ export default function ChatInput({
     }
   };
 
+  // Helpers to reduce repeated words and avoid boundary duplicates between segments
+  const collapseImmediateDuplicates = (str) => {
+    // Collapse immediate duplicate words like "the the" or "I I I" (case-insensitive)
+    // Keep it conservative: only collapse consecutive duplicates, preserve punctuation
+    return str.replace(/\b(\w+)(\s+\1\b)+/gi, "$1").replace(/\s+/g, " ");
+  };
+
+  const removeBoundaryDuplicate = (left, right) => {
+    // If last word of left equals first word of right, drop the first word of right
+    const leftMatch = left.match(/([A-Za-zÀ-ÖØ-öø-ÿ']+)\s*$/i);
+    const rightMatch = right.match(/^\s*([A-Za-zÀ-ÖØ-öø-ÿ']+)(.*)$/i);
+    if (!leftMatch || !rightMatch) return left + right;
+    const leftWord = leftMatch[1].toLowerCase();
+    const rightWord = rightMatch[1].toLowerCase();
+    if (leftWord && rightWord && leftWord === rightWord) {
+      return left + rightMatch[2];
+    }
+    return left + right;
+  };
+
+  const WORD = "[A-Za-zÀ-ÖØ-öø-ÿ\\u0400-\\u04FF']+"; // Latin + Cyrillic + apostrophes
+  // Collapse repeated phrases (bigrams to 6-grams): "Каким вы Каким вы Каким вы" => "Каким вы"
+  const collapseRepeatingPhrases = (str) => {
+    let out = str;
+    try {
+      const pattern = new RegExp(
+        `\\b(${WORD}(?:\\s+${WORD}){0,5})\\b(?:\\s+\\1\\b){1,}`,
+        "gi"
+      );
+      out = out.replace(pattern, "$1");
+    } catch (_) {
+      // Fallback: no-op if regex fails in older engines
+    }
+    return out.replace(/\s+/g, " ");
+  };
+
+  // Append new final segment while removing overlaps with the existing final
+  const appendFinalWithOverlap = (existing, addition) => {
+    const ex = (existing || "").trim();
+    const ad = (addition || "").trim();
+    if (!ad) return ex + (ex ? " " : "");
+    if (!ex) return ad + " ";
+    const exWords = ex.split(/\s+/);
+    const adLower = ad.toLowerCase();
+    const maxN = Math.min(6, exWords.length);
+    for (let n = maxN; n >= 1; n--) {
+      const tail = exWords.slice(-n).join(" ");
+      if (adLower.startsWith(tail.toLowerCase())) {
+        const remainder = ad.slice(tail.length).trimStart();
+        if (!remainder) {
+          // Entire addition is already present at the end
+          return ex + " ";
+        }
+        return ex + " " + remainder + " ";
+      }
+    }
+    // If the existing already ends with the whole addition, skip appending
+    if (ex.toLowerCase().endsWith(adLower)) {
+      return ex + " ";
+    }
+    return ex + " " + ad + " ";
+  };
+
   // Start speech recognition and stream text into the textarea
   // Uses the Web Speech Recognition API if available (Chrome-based, Safari). If unsupported, the mic button is disabled.
   const startRecording = () => {
@@ -70,14 +148,16 @@ export default function ChatInput({
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = languageCode; // Use selected learning language
-      recognition.interimResults = true; // show partials live
-      recognition.continuous = true; // keep listening until stopped
+      // On iOS Safari, continuous/interim can cause aggressive repetition. Prefer short utterances.
+      recognition.interimResults = isIOS ? false : true; // show partials live (desktop)
+      recognition.continuous = isIOS ? false : true; // keep listening until stopped (desktop)
       recognition.maxAlternatives = 1;
 
       baseTextRef.current = inputText
         ? inputText + (inputText.endsWith(" ") ? "" : " ")
         : "";
       finalTranscriptRef.current = "";
+      manualStopRef.current = false;
       isRecordingRef.current = true;
       recognitionRef.current = recognition;
 
@@ -86,17 +166,24 @@ export default function ChatInput({
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const res = event.results[i];
           if (res.isFinal) {
-            finalTranscriptRef.current += res[0].transcript + " ";
+            finalTranscriptRef.current = appendFinalWithOverlap(
+              finalTranscriptRef.current,
+              res[0].transcript
+            );
           } else {
             interim += res[0].transcript;
           }
         }
-        const combined = (
-          baseTextRef.current +
-          finalTranscriptRef.current +
-          interim
-        ).replace(/\s+/g, " ");
-        setInputText(combined.trimStart());
+        // Smartly join segments and reduce duplicate words/phrases
+        let combinedFinal = removeBoundaryDuplicate(
+          baseTextRef.current,
+          finalTranscriptRef.current
+        );
+        let combined = removeBoundaryDuplicate(combinedFinal, interim);
+        combined = collapseRepeatingPhrases(
+          collapseImmediateDuplicates(combined)
+        ).trimStart();
+        setInputText(combined);
       };
 
       recognition.onerror = (event) => {
@@ -107,10 +194,24 @@ export default function ChatInput({
 
       recognition.onend = () => {
         // Finalize text on end
-        const combined = (
-          baseTextRef.current + finalTranscriptRef.current
-        ).replace(/\s+/g, " ");
-        setInputText(combined.trim());
+        let combined = removeBoundaryDuplicate(
+          baseTextRef.current,
+          finalTranscriptRef.current
+        );
+        combined = collapseRepeatingPhrases(
+          collapseImmediateDuplicates(combined)
+        ).trim();
+        setInputText(combined);
+
+        // On iOS, emulate continuous mode by restarting automatically if not manually stopped
+        if (isIOS && isRecordingRef.current && !manualStopRef.current) {
+          try {
+            recognition.start();
+            return; // keep recording state
+          } catch (_) {
+            // If restart fails, fall through and stop
+          }
+        }
         isRecordingRef.current = false;
         recognitionRef.current = null;
       };
@@ -126,6 +227,7 @@ export default function ChatInput({
     const rec = recognitionRef.current;
     if (rec && typeof rec.stop === "function") {
       try {
+        manualStopRef.current = true;
         rec.stop();
       } catch (_) {
         // ignore
@@ -134,6 +236,19 @@ export default function ChatInput({
     isRecordingRef.current = false;
     recognitionRef.current = null;
   };
+
+  const handleInputFocus = () => {
+    // Play hint audio when user focuses on input, but only once per hint
+    if (currentHint && isTTSSupported && !hasPlayedHintRef.current) {
+      hasPlayedHintRef.current = true;
+      speakTTS(currentHint);
+    }
+  };
+
+  // Reset the hint played flag when the hint changes
+  useMemo(() => {
+    hasPlayedHintRef.current = false;
+  }, [currentHint]);
 
   return (
     <div className="bg-transparent px-4 py-4 relative z-10">
@@ -144,6 +259,7 @@ export default function ChatInput({
             value={inputText}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
+            onFocus={handleInputFocus}
             placeholder={placeholder}
             className="w-full px-4 py-3 pr-12 bg-transparent text-slate-100 placeholder-slate-400 rounded-3xl resize-none max-h-36 focus:outline-none scrollbar-hidden"
             rows="1"
