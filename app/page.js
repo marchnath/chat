@@ -2,8 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-// Removed Activity icon in favor of custom tongue icon
-// Replace custom tongue icon on home header with a dumbbell + notification badge
 import { Dumbbell } from "lucide-react";
 import Image from "next/image";
 import { contacts } from "@/lib/contacts";
