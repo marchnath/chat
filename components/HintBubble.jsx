@@ -50,21 +50,26 @@ export default function HintBubble({
     <div className="mx-4 sm:mx-6 relative z-10">
       <div className="relative">
         <div
-          className="group relative bg-blue-600 text-white rounded-t-3xl rounded-bl-3xl rounded-br-none px-5 py-4 pr-14 shadow-lg cursor-pointer transition-colors hover:bg-blue-600/90 overflow-hidden"
+          className="group relative bg-blue-600 text-white rounded-t-3xl rounded-bl-3xl rounded-br-none px-4 py-3 shadow-lg cursor-pointer transition-colors hover:bg-blue-600/90 overflow-hidden"
           onClick={handleClick}
         >
-          <p className="text-sm leading-relaxed whitespace-pre-wrap relative z-10 font-medium">
-            {hint}
-          </p>
-
-          {isExpanded && translation && (
-            <>
-              <div className="my-2" />
-              <p className="text-sm leading-relaxed text-white/90 italic relative z-10">
-                {translation}
+          <div className="flex items-start gap-3 relative z-10 pr-10">
+            <Lightbulb className="w-5 h-5 text-yellow-300 shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm leading-relaxed whitespace-pre-wrap font-medium">
+                {hint}
               </p>
-            </>
-          )}
+
+              {isExpanded && translation && (
+                <>
+                  <div className="my-2" />
+                  <p className="text-sm leading-relaxed text-white/90 italic">
+                    {translation}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
 
           {isSupported && (
             <div className="absolute flex flex-col gap-1 bottom-1.5 right-1.5 opacity-100 scale-100 md:opacity-0 md:scale-90 md:group-hover:opacity-100 md:group-hover:scale-100 md:focus-within:opacity-100 md:focus-within:scale-100">

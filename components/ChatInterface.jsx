@@ -257,11 +257,14 @@ export default function ChatInterface() {
                 </span>
               </div>
               <p className="font-semibold text-xl bg-gradient-to-r from-white to-white/70 bg-clip-text text-transparent mb-2 tracking-tight capitalize">
-                Let's chat!
+                Давай пообщаемся!
               </p>
               <p className="text-sm text-slate-400 leading-relaxed">
-                Let&apos;s start chatting. Share something or ask me a question
-                in your learning language.
+                Давай начнем общение. Расскажи что-нибудь или задай мне вопрос
+                на изучаемом языке.
+              </p>
+              <p className="text-xs text-slate-500 mt-3 font-medium">
+                💡 Нажми на сообщение, чтобы увидеть перевод
               </p>
             </div>
           </div>
